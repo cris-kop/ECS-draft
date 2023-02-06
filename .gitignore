@@ -3,6 +3,8 @@
 2023-01-28 backup/
 2023-01-31 backup/
 2023-01-31 backup before multi attach-remove/
+.vs/
+Debug/
 
 # Prerequisites
 *.d
