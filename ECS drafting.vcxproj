@@ -145,6 +145,7 @@
     <ClCompile Include="EntityAdmin.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Systems.cpp" />
+    <ClCompile Include="UnitTests.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Archetypedata.h" />
@@ -152,7 +153,10 @@
     <ClInclude Include="ComponentSet.h" />
     <ClInclude Include="Entity.h" />
     <ClInclude Include="EntityAdmin.h" />
+    <ClInclude Include="Main.h" />
     <ClInclude Include="Systems.h" />
+    <ClInclude Include="TestData.h" />
+    <ClInclude Include="UnitTests.h" />
     <ClInclude Include="vector3.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

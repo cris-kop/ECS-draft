@@ -5,19 +5,20 @@
 
 struct Entity
 {
-	Entity(const unsigned int pGlobalId) : mGlobalIndex(pGlobalId), mRowIndex(-1) { }
+	Entity() : mGlobalId(-1) { }
+	Entity(const unsigned int pGlobalId) : mGlobalId(pGlobalId), mRowIndex(-1) { }
 	
-	ComponentSet GetComponentSet()		{	return mComponentSet;	}
-	int GetRowIndex()					{	return mRowIndex;		}
+	ComponentSet GetComponentSet()	const	{	return mComponentSet;	}
+	int GetRowIndex()				const	{	return mRowIndex;		}
+	int GetGlobalId()				const	{	return mGlobalId;		}
 
 	void SetRowIndex(const unsigned int pIndex)			{	mRowIndex = pIndex;	}
 	void SetComponentSet(const ComponentSet pNewSet)	{	mComponentSet = pNewSet; }
-	void SetGlobalIndex(const unsigned int pIndex)		{	mGlobalIndex = pIndex;	}
 
 	ComponentSet mComponentSet = ComponentSet::None;
 
-	size_t	mGlobalIndex;
-	int		mRowIndex;
+	int mGlobalId;
+	int	mRowIndex;
 };
 
 #endif

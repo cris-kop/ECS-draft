@@ -3,7 +3,13 @@
 #include <vector>
 #include <algorithm>
 
+#include "Main.h"
 #include "EntityAdmin.h"
+#include "TestData.h"
+#include "UnitTests.h"
+
+EntityAdmin myAdmin;
+std::vector<int> entityIds;
 
 
 int WINAPI WinMain(HINSTANCE hInstance,
@@ -11,29 +17,57 @@ int WINAPI WinMain(HINSTANCE hInstance,
 				   LPSTR lpCmdLine,
 				   int nCmdShow)
 {
-	EntityAdmin myAdmin;
 	myAdmin.Init();
 
-	myAdmin.AddWorldProp(Vector3f(0.0f, 5.0f, 1.0f), Vector3f(90.0f, 0.0f, 0.0f), Vector3f(1.0f, 1.5f, 1.0f));
-	myAdmin.AddWorldProp(Vector3f(1.0f, 5.0f, 3.0f), Vector3f(0.0f, 90.0f, 0.0f), Vector3f(1.0f, 1.0f, 0.5f));
-	int entityId = myAdmin.AddWorldProp(Vector3f(2.0f, 5.0f, 5.0f), Vector3f(0.0f, 0.0f, 90.0f), Vector3f(0.75f, 1.0f, 1.5f));
+	// param is to define if tests should stop when 1 fails
+	if(!RunTests(false))
+	{
+		return -1;
+	}
+	return 0;
+}
 
-	int otherEntityId = myAdmin.AddCamera(Vector3f(1.0f, 5.0f, 3.0f), Vector3f(0.0f, 90.0f, 0.0f), Vector3f(1.0f, 1.0f, 0.5f), Vector3f(0.0f, 0.0f, 1.0f), Vector3f(0.0f, 45.0f, 0.0f));
+bool RunTests(const bool pStopAtFailed)
+{
+	for(size_t index=0;index<worldPropPos.size();++index)
+	{
+		entityIds.emplace_back(myAdmin.AddWorldProp(worldPropPos[index], worldPropRot[index], worldPropScale[index]));
+	}
+	entityIds.emplace_back(myAdmin.AddCamera(cameraPos, cameraRot, cameraScale, cameraLookAt, cameraYawPitchRoll));
+
+	if(!UnitTests::AttachComponents())
+	{
+		if(pStopAtFailed)	{ return false; }
+	}
 
 	myAdmin.UpdateSystems();
+	if(!UnitTests::SystemUpdate())
+	{
+		if(pStopAtFailed)	{ return false; }
+	}	
 
-	//TransformComponent *testGetter = myAdmin.GetComponent(entityId, ComponentSet::Transform);
-	TransformComponent *testGetter = myAdmin.GetComponent<TransformComponent>(entityId);
-	CameraComponent *camGetter = myAdmin.GetComponent<CameraComponent>(otherEntityId);
+	myAdmin.RemoveComponents(ComponentSet::Transform, entityIds[0]);
+	if(!UnitTests::RemoveComponent1())
+	{
+		if(pStopAtFailed)	{ return false; }
+	}	
 
-//	myAdmin.DeleteEntity(entityId);
+	entityIds.emplace_back(myAdmin.DuplicateEntity(entityIds[3]));
+	if(!UnitTests::DuplicateEntity())
+	{
+		if(pStopAtFailed)	{ return false; }
+	}	
 
-	myAdmin.RemoveComponents(ComponentSet::Transform | ComponentSet::Camera, otherEntityId);
-//	myAdmin.RemoveComponents(ComponentSet::Camera, otherEntityId);
+	myAdmin.RemoveComponents(ComponentSet::Camera, entityIds[3]);
+	if(!UnitTests::RemoveComponent2())
+	{
+		if(pStopAtFailed)	{ return false; }
+	}	
 
-	// ADD UNIT TESTS!!!!!!
-	// VALIDATE GET COMPONENT WITH THEIR VALUES, ALSO ENTITY IDs
-
-
-	return 0;
+	myAdmin.DeleteEntity(2);
+	if(!UnitTests::DeleteEntity())
+	{
+		if(pStopAtFailed)	{ return false; }
+	}	
+	return true;
 }

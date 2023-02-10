@@ -1,5 +1,12 @@
 #include "EntityAdmin.h"
 
+#include <cassert>
+
+EntityAdmin::EntityAdmin()
+{
+	mLastEntityId = 0;
+}
+
 void EntityAdmin::Init()
 {
 	ISystem *worldPropSystem = new WorldPropsSystem(ComponentSet::Transform);
@@ -8,7 +15,7 @@ void EntityAdmin::Init()
 	mSystems.emplace_back(worldPropSystem);
 	mSystems.emplace_back(cameraSystem);
 
-	mEntities.emplace_back(0);	// reserved
+	mEntities.insert(std::make_pair(0, Entity(0)));		// reserved
 }
 
 unsigned int EntityAdmin::GetArchetypeDataIndex(const ComponentSet pComponentSet)
@@ -25,7 +32,7 @@ unsigned int EntityAdmin::GetArchetypeDataIndex(const ComponentSet pComponentSet
 	return static_cast<unsigned int>(mArchetypesData.size()) - 1;
 }
 
-bool EntityAdmin::AttachComponents(std::vector<ComponentData> *pComponentData, unsigned int pEntityIndex)
+bool EntityAdmin::AttachComponents(std::vector<ComponentData> *pComponentData, unsigned int pEntityId)
 {
 	ComponentSet componentSet = ComponentSet::None;
 
@@ -33,30 +40,32 @@ bool EntityAdmin::AttachComponents(std::vector<ComponentData> *pComponentData, u
 	{
 		componentSet |= component.ComponentType;
 	}
-	return RemoveAttachComponents(componentSet, pComponentData, pEntityIndex);
+	return RemoveAttachComponents(componentSet, pComponentData, pEntityId);
 }
 
-bool EntityAdmin::RemoveComponents(const ComponentSet pComponents, unsigned int pEntityIndex)
+bool EntityAdmin::RemoveComponents(const ComponentSet pComponents, unsigned int pEntityId)
 {
-	return RemoveAttachComponents(pComponents, nullptr, pEntityIndex);
+	return RemoveAttachComponents(pComponents, nullptr, pEntityId);
 }
 
 int EntityAdmin::AddWorldProp(const Vector3f &pPos, const Vector3f &pRot, const Vector3f &pScale)
 {
-	mEntities.emplace_back(static_cast<unsigned int>(mEntities.size()));
+	++mLastEntityId;
+	mEntities.insert(std::make_pair(mLastEntityId, Entity(mLastEntityId)));
 		
 	TransformComponent myTransform(pPos, pRot, pScale);
 
 	std::vector<ComponentData> tData;
 	tData.emplace_back(ComponentSet::Transform, (void*)&myTransform);
-	AttachComponents(&tData, static_cast<unsigned int>(mEntities.size() - 1));
+	AttachComponents(&tData, mLastEntityId);
 
 	return static_cast<int>(mEntities.size()) - 1;
 }
 
 int EntityAdmin::AddCamera(const Vector3f &pPos, const Vector3f &pRot, const Vector3f &pScale, const Vector3f &pLookAt, const Vector3f &pYawPitchRoll)
 {
-	mEntities.emplace_back(static_cast<unsigned int>(mEntities.size()));
+	++mLastEntityId;
+	mEntities.insert(std::make_pair(mLastEntityId, Entity(mLastEntityId)));
 
 	TransformComponent myTransform(pPos, pRot, pScale);
 	CameraComponent myCamera(pLookAt, pYawPitchRoll);
@@ -64,18 +73,25 @@ int EntityAdmin::AddCamera(const Vector3f &pPos, const Vector3f &pRot, const Vec
 	std::vector<ComponentData> tData;
 	tData.emplace_back(ComponentSet::Transform, (void*)&myTransform);
 	tData.emplace_back(ComponentSet::Camera, (void*)&myCamera);
-	AttachComponents(&tData, static_cast<unsigned int>(mEntities.size() - 1));
+	AttachComponents(&tData, mLastEntityId);
 
 	return static_cast<int>(mEntities.size()) - 1;
 }
 
-bool EntityAdmin::DeleteEntity(const unsigned int pEntityIndex)
+bool EntityAdmin::DeleteEntity(const unsigned int pEntityId)
 {
-	if(pEntityIndex >= mEntities.size()) 
+	if(pEntityId > mLastEntityId) 
 	{
 		return false;
 	}
-	auto && entity  = mEntities[pEntityIndex];
+	
+	Entity &entity = mEntities[pEntityId];
+	if(entity.GetGlobalId() == -1)
+	{
+		mEntities.erase(pEntityId);
+		return false;
+	}
+
 	unsigned int archetypeIndex = GetArchetypeDataIndex(entity.GetComponentSet());
 
 	// remove archetype components data
@@ -89,13 +105,26 @@ bool EntityAdmin::DeleteEntity(const unsigned int pEntityIndex)
 		}
 	}
 
-	if(pEntityIndex != static_cast<unsigned int>(mEntities.size() - 1))
-	{
-		mEntities[pEntityIndex] = mEntities.back();
-		mEntities[pEntityIndex].SetGlobalIndex(pEntityIndex);
-	}
-	mEntities.pop_back();
+	mEntities.erase(pEntityId);
 	return true;
+}
+
+int EntityAdmin::DuplicateEntity(const unsigned int pSourceEntityId)
+{
+	auto && sourceEntity = mEntities[pSourceEntityId];
+	if(sourceEntity.GetGlobalId() == -1)
+	{
+		return -1;
+	}
+	
+	++mLastEntityId;
+	mEntities.insert(std::make_pair(mLastEntityId, mEntities[pSourceEntityId]));
+
+	// copy components
+	unsigned int archetype = GetArchetypeDataIndex(sourceEntity.GetComponentSet());
+	mEntities[mLastEntityId].SetRowIndex(mArchetypesData[archetype].CopyRow(sourceEntity.GetRowIndex(), mLastEntityId));
+	
+	return mLastEntityId;
 }
 
 void EntityAdmin::UpdateSystems()
@@ -114,15 +143,15 @@ void EntityAdmin::UpdateSystems()
 
 // PRIVATE
 
-bool EntityAdmin::RemoveAttachComponents(const ComponentSet pComponents, std::vector<ComponentData> *pComponentData, unsigned int pEntityIndex)
+bool EntityAdmin::RemoveAttachComponents(const ComponentSet pComponents, std::vector<ComponentData> *pComponentData, unsigned int pEntityId)
 {
-	if(pEntityIndex >= mEntities.size()) 
+	if(pEntityId > mLastEntityId) 
 	{
 		return false;
 	}
 
-	auto && entity = mEntities[pEntityIndex];
-		
+	auto && entity = mEntities[pEntityId];
+
 	ComponentSet componentSet = entity.GetComponentSet();
 	ComponentSet setToUpdate = componentSet;
 	unsigned int oldArchetypeIndex = GetArchetypeDataIndex(componentSet);
@@ -144,7 +173,7 @@ bool EntityAdmin::RemoveAttachComponents(const ComponentSet pComponents, std::ve
 		setToUpdate = entity.GetComponentSet();		// when removing, only copy the new components from set
 	}
 
-	CopyComponentsBetweenArchetypes(setToUpdate, pEntityIndex, oldArchetypeIndex, newArchetypeIndex);
+	CopyComponentsBetweenArchetypes(setToUpdate, pEntityId, oldArchetypeIndex, newArchetypeIndex);
 		
 	// remove row from old archetype and update moved rowIndex for entity taking the place
 	unsigned int oldRowIndex = entity.GetRowIndex();
@@ -163,8 +192,8 @@ bool EntityAdmin::RemoveAttachComponents(const ComponentSet pComponents, std::ve
 		AddComponentsToArchetype(pComponents, pComponentData, newArchetypeIndex);
 	}
 
-	mArchetypesData[newArchetypeIndex].mGlobalEntityIds.emplace_back(pEntityIndex);
-	entity.SetRowIndex(static_cast<unsigned int>(mArchetypesData[newArchetypeIndex].mGlobalEntityIds.size()) - 1);
+	mArchetypesData[newArchetypeIndex].mEntityIds.emplace_back(pEntityId);
+	entity.SetRowIndex(static_cast<unsigned int>(mArchetypesData[newArchetypeIndex].mEntityIds.size()) - 1);
 
 	return true;
 }
@@ -186,9 +215,14 @@ void EntityAdmin::AddComponentsToArchetype(const ComponentSet &pComponent, std::
 	}
 }
 
-void EntityAdmin::CopyComponentsBetweenArchetypes(const ComponentSet &pComponent, const unsigned int pEntityIndex, const unsigned int pSourceArchetype, const unsigned int pTargetArchetype)
+void EntityAdmin::CopyComponentsBetweenArchetypes(const ComponentSet &pComponent, const unsigned int pEntityId, const unsigned int pSourceArchetype, const unsigned int pTargetArchetype)
 {
-	auto && entity = mEntities[pEntityIndex];
+	if(pEntityId > mLastEntityId) 
+	{
+		return;
+	}
+	
+	auto && entity = mEntities[pEntityId];
 
 	if(SetHasComponent(pComponent, ComponentSet::Transform))
 	{
@@ -198,4 +232,9 @@ void EntityAdmin::CopyComponentsBetweenArchetypes(const ComponentSet &pComponent
 	{
 		mArchetypesData[pTargetArchetype].mCameras.emplace_back(mArchetypesData[pSourceArchetype].mCameras[entity.GetRowIndex()]);
 	}
+}
+
+const Entity& EntityAdmin::GetEntity(unsigned int pId)
+{
+	return mEntities[pId];
 }
