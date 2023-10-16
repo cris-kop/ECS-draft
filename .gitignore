@@ -5,6 +5,7 @@
 2023-01-31 backup before multi attach-remove/
 .vs/
 Debug/
+.user
 
 # Prerequisites
 *.d
