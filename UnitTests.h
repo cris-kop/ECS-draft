@@ -6,12 +6,12 @@
 namespace UnitTests
 {
 
-bool AttachComponents();
-bool SystemUpdate();
-bool DuplicateEntity();
-bool DeleteEntity();
-bool RemoveComponent1();
-bool RemoveComponent2();
+bool ValidateCreateComponents();
+bool ValidateSystemsUpdate();
+bool ValidateDuplicateEntity(const unsigned int pSourceEntityId, const unsigned int pTargetEntityId);
+bool ValidateDeleteEntity(const unsigned int pEntityId);
+//bool RemoveComponent1();
+//bool RemoveComponent2();*/
 
 void LogPassed(const bool pPassed, const std::string &pTestDesc);
 

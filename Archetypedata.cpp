@@ -1,44 +1,37 @@
 #include "Archetypedata.h"
 
+void ArchetypeData::AddEntityIdForAddedRow(const unsigned int pEntityId)
+{
+	mEntityIds.emplace_back(pEntityId);
+}
+
 int ArchetypeData::DeleteRow(const unsigned int pIndex)
 {
-	if(pIndex > mEntityIds.size())	// invalid index
+	if(pIndex >= mEntityIds.size())	// invalid index
 	{
 		return -1;
 	}
-		
+	
 	int movedEntityId = -1;
-		
-	// check if it's not the last row
-	if(pIndex != static_cast<unsigned int>(mEntityIds.size()) - 1)
-	{
-		// move last item to now free index
-		mEntityIds[pIndex] = mEntityIds.back();
 
-		if(SetHasComponent(mComponentSet, ComponentSet::Transform))
-		{
-			mTransforms[pIndex] = mTransforms.back();
-		}
-		if(SetHasComponent(mComponentSet, ComponentSet::Camera))
-		{
-			mCameras[pIndex] = mCameras.back();
+	// check if it's not the last row
+	if(pIndex != mEntityIds.size() - 1)
+	{
+		mEntityIds[pIndex] = mEntityIds.back();
+		
+		for(size_t i=0;i<64;++i)
+		{		
+			if((static_cast<uint64_t>(mComponentSet) >> i) & 1)
+			{
+				ComponentSet componentType = static_cast<ComponentSet>(1 << i);
+				mStorage[componentType]->DeleteComponent(pIndex);
+			}
 		}
 		movedEntityId = mEntityIds[pIndex];
 	}
-
-	// remove last index
 	mEntityIds.pop_back();
-	if(SetHasComponent(mComponentSet, ComponentSet::Transform))
-	{
-		mTransforms.pop_back();
-	}
-	if(SetHasComponent(mComponentSet, ComponentSet::Camera))
-	{
-		mCameras.pop_back();
-	}
 	return movedEntityId;
 }
-
 
 int ArchetypeData::CopyRow(const unsigned int pRowIndex, const unsigned pTargetEntityId)
 {
@@ -48,14 +41,14 @@ int ArchetypeData::CopyRow(const unsigned int pRowIndex, const unsigned pTargetE
 	}
 
 	mEntityIds.emplace_back(pTargetEntityId);
-
-	if(SetHasComponent(mComponentSet, ComponentSet::Transform))
-	{
-		mTransforms.emplace_back(mTransforms[pRowIndex]);
+	int newRowIndex = 0;
+	for(size_t i=0;i<64;++i)
+	{		
+		if((static_cast<uint64_t>(mComponentSet) >> i) & 1)
+		{
+			ComponentSet componentType = static_cast<ComponentSet>(1 << i);
+			newRowIndex = mStorage[componentType]->CopyComponentFromOtherStorage(mStorage[componentType], pRowIndex);
+		}
 	}
-	if(SetHasComponent(mComponentSet, ComponentSet::Camera))
-	{
-		mCameras.emplace_back(mCameras[pRowIndex]);
-	}
-	return static_cast<int>(mEntityIds.size()) - 1;		// new row index
+	return static_cast<int>(mEntityIds.size()) - 1;		// new row index*/
 }

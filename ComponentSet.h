@@ -7,9 +7,9 @@
 
 enum class ComponentSet : uint64_t
 {
-	None        = 0,
-    Transform   = 1 << 0,
-	Camera      = 1 << 1
+	None        = 0,            // 0
+    Transform   = 1 << 0,       // 1
+	Camera      = 1 << 1        // 2
 };
 
 inline ComponentSet operator ~ (const ComponentSet pComponentSet)

@@ -5,8 +5,13 @@
 
 struct Entity
 {
-	Entity() : mGlobalId(-1) { }
+	Entity() : mGlobalId(-1), mRowIndex(-1) { }
 	Entity(const unsigned int pGlobalId) : mGlobalId(pGlobalId), mRowIndex(-1) { }
+	Entity(const Entity pSourceEntity, const unsigned int pGlobalId)
+	{ 
+		*this = pSourceEntity;
+		mGlobalId = pGlobalId;
+	}
 	
 	ComponentSet GetComponentSet()	const	{	return mComponentSet;	}
 	int GetRowIndex()				const	{	return mRowIndex;		}

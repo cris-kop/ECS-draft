@@ -11,6 +11,12 @@
 EntityAdmin myAdmin;
 std::vector<int> entityIds;
 
+// add RemoveComponent function
+// AddEntityItForAdded row, better in Archetype struct?
+// can I auto change archetype when adding component?
+// why entityId double, in map and in class?
+// add reusing free/deleted archetype rows
+// add entityId manually to archetypedata, prevent how?
 
 int WINAPI WinMain(HINSTANCE hInstance,
 				   HINSTANCE hPrevInstance,
@@ -35,37 +41,37 @@ bool RunTests(const bool pStopAtFailed)
 	}
 	entityIds.emplace_back(myAdmin.AddCamera(cameraPos, cameraRot, cameraScale, cameraLookAt, cameraYawPitchRoll));
 
-	if(!UnitTests::AttachComponents())
+	if(!UnitTests::ValidateCreateComponents())
 	{
 		if(pStopAtFailed)	{ return false; }
 	}
 
 	myAdmin.UpdateSystems();
-	if(!UnitTests::SystemUpdate())
+	if(!UnitTests::ValidateSystemsUpdate())
 	{
 		if(pStopAtFailed)	{ return false; }
 	}	
 
-	myAdmin.RemoveComponents(ComponentSet::Transform, entityIds[0]);
+/*	myAdmin.RemoveComponents(ComponentSet::Transform, entityIds[0]);
 	if(!UnitTests::RemoveComponent1())
 	{
 		if(pStopAtFailed)	{ return false; }
 	}	
-
+*/
 	entityIds.emplace_back(myAdmin.DuplicateEntity(entityIds[3]));
-	if(!UnitTests::DuplicateEntity())
+	if(!UnitTests::ValidateDuplicateEntity(4, entityIds.back()))
 	{
 		if(pStopAtFailed)	{ return false; }
 	}	
-
+/*
 	myAdmin.RemoveComponents(ComponentSet::Camera, entityIds[3]);
 	if(!UnitTests::RemoveComponent2())
 	{
 		if(pStopAtFailed)	{ return false; }
 	}	
-
-	myAdmin.DeleteEntity(2);
-	if(!UnitTests::DeleteEntity())
+*/
+	myAdmin.DeleteEntity(4);
+	if(!UnitTests::ValidateDeleteEntity(4))
 	{
 		if(pStopAtFailed)	{ return false; }
 	}	

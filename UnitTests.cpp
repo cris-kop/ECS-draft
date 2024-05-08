@@ -10,7 +10,7 @@ namespace UnitTests
 
 // UNIT TESTS - VALIDATING RESULTS
 
-bool AttachComponents()
+bool ValidateCreateComponents()
 {
 	bool passed = true;
 
@@ -32,7 +32,7 @@ bool AttachComponents()
 	return passed;
 }
 
-bool SystemUpdate()
+bool ValidateSystemsUpdate()
 {
 	bool passed = true;
 
@@ -48,35 +48,34 @@ bool SystemUpdate()
 	return passed;
 }
 
-
-bool DuplicateEntity()
+bool ValidateDuplicateEntity(const unsigned int pSourceEntityId, const unsigned int pTargetEntityId)
 {
 	bool passed = true;
 
-	const TransformComponent *TransformA = myAdmin.GetComponent<TransformComponent>(entityIds[3]);
-	const TransformComponent *TransformB = myAdmin.GetComponent<TransformComponent>(entityIds[3]);
+	const TransformComponent *TransformA = myAdmin.GetComponent<TransformComponent>(pSourceEntityId);
+	const TransformComponent *TransformB = myAdmin.GetComponent<TransformComponent>(pTargetEntityId);
 
-	const CameraComponent *CameraA = myAdmin.GetComponent<CameraComponent>(entityIds[4]);
-	const CameraComponent *CameraB = myAdmin.GetComponent<CameraComponent>(entityIds[4]);
+	const CameraComponent *CameraA = myAdmin.GetComponent<CameraComponent>(pSourceEntityId);
+	const CameraComponent *CameraB = myAdmin.GetComponent<CameraComponent>(pTargetEntityId);
 
 	if(TransformA == nullptr || TransformB == nullptr || CameraA == nullptr || CameraB == nullptr)	{ passed = false; }
 
 	if(TransformA->mPosRotScale != TransformB->mPosRotScale)					{ passed = false; }
 	if(CameraA->mLookAtPlusPosRotScale != CameraB -> mLookAtPlusPosRotScale)	{ passed = false; }
 
-	if(myAdmin.GetEntity(entityIds[3]).GetComponentSet() != myAdmin.GetEntity(entityIds[4]).GetComponentSet())		{ passed = false; }
+	if(myAdmin.GetEntity(pSourceEntityId).GetComponentSet() != myAdmin.GetEntity(pTargetEntityId).GetComponentSet())		{ passed = false; }
 	
 	LogPassed(passed, "Duplicate Entity");
 	return passed;
 }
 
-bool DeleteEntity()
+bool ValidateDeleteEntity(const unsigned int pEntityId)
 {
-	bool passed = myAdmin.GetEntity(2).GetGlobalId() == -1;
+	bool passed = myAdmin.GetEntity(pEntityId).GetGlobalId() == -1;
 	LogPassed(passed, "Delete Entity");
 	return passed;
 }
-
+/*
 bool RemoveComponent1()
 {
 	bool passed = true;
@@ -96,7 +95,7 @@ bool RemoveComponent2()
 	LogPassed(passed, "Remove Component(2)");
 	return passed;
 }
-
+*/
 void LogPassed(const bool pPassed, const std::string &pTestDesc)
 {
 	std::string logLine = "PASSED: " + pTestDesc + ".\n";
