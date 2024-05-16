@@ -12,11 +12,8 @@ EntityAdmin myAdmin;
 std::vector<int> entityIds;
 
 // add RemoveComponent function
-// AddEntityItForAdded row, better in Archetype struct?
-// can I auto change archetype when adding component?
-// why entityId double, in map and in class?
-// add reusing free/deleted archetype rows
-// add entityId manually to archetypedata, prevent how?
+// properly reusing free/deleted archetype rows?
+// typeid OR ComponentSet enum?
 
 int WINAPI WinMain(HINSTANCE hInstance,
 				   HINSTANCE hPrevInstance,
@@ -35,43 +32,44 @@ int WINAPI WinMain(HINSTANCE hInstance,
 
 bool RunTests(const bool pStopAtFailed)
 {
+	// Create 4 entities, 3 worldprops and 1 camera
 	for(size_t index=0;index<worldPropPos.size();++index)
 	{
 		entityIds.emplace_back(myAdmin.AddWorldProp(worldPropPos[index], worldPropRot[index], worldPropScale[index]));
 	}
 	entityIds.emplace_back(myAdmin.AddCamera(cameraPos, cameraRot, cameraScale, cameraLookAt, cameraYawPitchRoll));
 
+	// Are all entities with components created, correct values?
 	if(!UnitTests::ValidateCreateComponents())
 	{
 		if(pStopAtFailed)	{ return false; }
 	}
 
+	// Did the systems operate on the components?
 	myAdmin.UpdateSystems();
 	if(!UnitTests::ValidateSystemsUpdate())
 	{
 		if(pStopAtFailed)	{ return false; }
 	}	
 
-/*	myAdmin.RemoveComponents(ComponentSet::Transform, entityIds[0]);
-	if(!UnitTests::RemoveComponent1())
+	// Duplicate the Camera entity, with Transform + Camera
+	unsigned entityToDuplicate = entityIds[static_cast<unsigned int>(worldPropPos.size())];
+	entityIds.emplace_back(myAdmin.DuplicateEntity(entityToDuplicate));
+	if(!UnitTests::ValidateDuplicateEntity(entityToDuplicate, entityIds.back()))
 	{
 		if(pStopAtFailed)	{ return false; }
 	}	
-*/
-	entityIds.emplace_back(myAdmin.DuplicateEntity(entityIds[3]));
-	if(!UnitTests::ValidateDuplicateEntity(4, entityIds.back()))
+
+	// Remove Transform component from duplicated Camera entity
+	myAdmin.RemoveComponent(ComponentSet::Transform, entityToDuplicate);
+	if(!UnitTests::ValidateRemoveComponent(TransformComponent(), ComponentSet::Camera, entityToDuplicate))
 	{
 		if(pStopAtFailed)	{ return false; }
-	}	
-/*
-	myAdmin.RemoveComponents(ComponentSet::Camera, entityIds[3]);
-	if(!UnitTests::RemoveComponent2())
-	{
-		if(pStopAtFailed)	{ return false; }
-	}	
-*/
-	myAdmin.DeleteEntity(4);
-	if(!UnitTests::ValidateDeleteEntity(4))
+	}
+
+	// Remove the entity 
+	myAdmin.DeleteEntity(entityToDuplicate+1);
+	if(!UnitTests::ValidateDeleteEntity(entityToDuplicate+1))
 	{
 		if(pStopAtFailed)	{ return false; }
 	}	

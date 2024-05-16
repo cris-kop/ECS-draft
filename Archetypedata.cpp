@@ -1,5 +1,19 @@
 #include "Archetypedata.h"
 
+#include "ArchetypeStorageFactory.h"
+
+ArchetypeData::ArchetypeData(const ComponentSet &pComponentSet, ArchetypeStorageFactory *storageFactoryPtr) : mComponentSet(pComponentSet)
+{
+	for(size_t i=0;i<64;++i)
+	{		
+		if((static_cast<uint64_t>(mComponentSet) >> i) & 1)
+		{
+			ComponentSet componentType = static_cast<ComponentSet>(1 << i);
+			mStorage[componentType] = storageFactoryPtr->Create(componentType);
+		}
+	}
+}
+
 void ArchetypeData::AddEntityIdForAddedRow(const unsigned int pEntityId)
 {
 	mEntityIds.emplace_back(pEntityId);

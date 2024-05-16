@@ -75,27 +75,7 @@ bool ValidateDeleteEntity(const unsigned int pEntityId)
 	LogPassed(passed, "Delete Entity");
 	return passed;
 }
-/*
-bool RemoveComponent1()
-{
-	bool passed = true;
-	if(myAdmin.GetComponent<TransformComponent>(entityIds[0]) != nullptr)	{ passed = false; }
 
-	if(myAdmin.GetEntity(1).mComponentSet != ComponentSet::None)	{ passed = false; }
-
-	LogPassed(passed, "Remove Component(1)");
-	return passed;
-}
-
-bool RemoveComponent2()
-{
-	bool passed = true;
-	if(myAdmin.GetComponent<CameraComponent>(entityIds[3]) != nullptr)	{ passed = false; }
-
-	LogPassed(passed, "Remove Component(2)");
-	return passed;
-}
-*/
 void LogPassed(const bool pPassed, const std::string &pTestDesc)
 {
 	std::string logLine = "PASSED: " + pTestDesc + ".\n";

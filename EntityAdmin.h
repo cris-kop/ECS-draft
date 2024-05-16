@@ -5,6 +5,8 @@
 #include "Components.h"
 #include "Entity.h"
 #include "Systems.h"
+#include "ComponentMappings.h"
+#include "ArchetypeStorageFactory.h"
 
 #include <vector>
 #include <cassert>
@@ -12,20 +14,6 @@
 #include <typeindex>
 
 #include <bitset>
-
-static const std::unordered_map<std::type_index, ComponentSet> gCOMPONENT_MAP = 
-{
-	{ typeid(TransformComponent), ComponentSet::Transform },
-	{ typeid(CameraComponent), ComponentSet::Camera }
-};
-
-static const std::unordered_map<ComponentSet, std::type_index> gCOMPONENT_MAP_INV = 
-{
-	{ ComponentSet::Transform, typeid(TransformComponent) },
-	{ ComponentSet::Camera, typeid(CameraComponent) }
-};
-
-
 
 struct EntityAdmin
 {
@@ -36,12 +24,98 @@ struct EntityAdmin
 	void Init();
 
 	unsigned int GetArchetypeDataIndex(const ComponentSet pComponentSet);
-	//bool AttachComponents(std::vector<ComponentData> *pComponentData, unsigned int pEntityId);
-	//bool RemoveComponents(const ComponentSet pComponents, unsigned int pEntityId);
 
 	// add 'logical archetypes'
 	int AddWorldProp(const Vector3f &pPos, const Vector3f &pRot, const Vector3f &pScale);
 	int AddCamera(const Vector3f &pPos, const Vector3f &pRot, const Vector3f &pScale, const Vector3f &pLookAt, const Vector3f &pYawPitchRoll);
+
+	// Attach-remove components from entity
+	template<typename T>
+	bool AttachComponent(T comp, const unsigned int pEntityId)
+	{
+		std::unordered_map<unsigned int, Entity>::iterator entityIt = mEntities.find(pEntityId);
+		if(entityIt == mEntities.end())
+		{
+			return false;
+		}
+		Entity &entity = entityIt->second;
+
+		ComponentSet oldSet = entity.GetComponentSet();
+		int oldRowIndex = entity.GetRowIndex();
+		unsigned int oldArchetypeIndex = GetArchetypeDataIndex(oldSet);
+
+		ComponentSet newComponentType = ComponentSet::None;
+
+		std::unordered_map<std::type_index, ComponentSet>::const_iterator setIt = gCOMPONENT_MAP.find(typeid(T));
+		if(setIt != gCOMPONENT_MAP.end())
+		{
+			newComponentType = setIt->second;
+		}
+		else
+		{
+			return false;
+		}
+
+		if(Contains(oldSet, newComponentType))
+		{
+			return false;
+		}
+		entity.SetComponentSet(oldSet | newComponentType);
+		unsigned int newArchetypeIndex = GetArchetypeDataIndex(entity.GetComponentSet());
+
+		int newRowIndex = AddComponentToArchetype(comp, newArchetypeIndex);
+
+		if(oldSet != ComponentSet::None)
+		{
+			CopyComponentsBetweenArchetypes(pEntityId, oldArchetypeIndex, newArchetypeIndex);
+		}
+		entity.SetRowIndex(newRowIndex);
+
+		mArchetypesData[newArchetypeIndex].AddEntityIdForAddedRow(pEntityId);
+
+		int movedEntityId = mArchetypesData[oldArchetypeIndex].DeleteRow(oldRowIndex);
+		if(movedEntityId != -1)
+		{
+			mEntities[movedEntityId].SetRowIndex(oldRowIndex);
+		}
+		return true;
+	}
+
+	// Remove component(s) from entity
+	bool RemoveComponent(const ComponentSet pComponentType, const unsigned int pEntityId)
+	{
+		std::unordered_map<unsigned int, Entity>::iterator entityIt = mEntities.find(pEntityId);
+		if(entityIt == mEntities.end())
+		{
+			return false;
+		}
+		Entity &entity = entityIt->second;
+
+		ComponentSet oldSet = entity.GetComponentSet();
+		int oldRowIndex = entity.GetRowIndex();
+
+		if(!Contains(oldSet, pComponentType))
+		{
+			return false;
+		}
+
+		ComponentSet newSet = oldSet & ~pComponentType;
+
+		unsigned int oldArchetypeIndex = GetArchetypeDataIndex(oldSet);
+		unsigned int newArchetypeIndex = GetArchetypeDataIndex(newSet);
+
+		entity.SetComponentSet(newSet);
+		entity.SetRowIndex(CopyComponentsBetweenArchetypes(pEntityId, oldArchetypeIndex, newArchetypeIndex));
+
+		mArchetypesData[newArchetypeIndex].AddEntityIdForAddedRow(pEntityId);
+
+		int movedEntityId = mArchetypesData[oldArchetypeIndex].DeleteRow(oldRowIndex);
+		if(movedEntityId != -1)
+		{
+			mEntities[movedEntityId].SetRowIndex(oldRowIndex);
+		}
+		return true;
+	}
 
 	// delete or duplicate entity
 	bool DeleteEntity(const unsigned int pEntityId);
@@ -49,22 +123,16 @@ struct EntityAdmin
 
 	void UpdateSystems();
 
-	// fetch single component
-	template<typename T> ComponentSet GetComponentType()				{	return ComponentSet::None;			}
-
-	template<>	ComponentSet GetComponentType<TransformComponent>()		{	return ComponentSet::Transform;		}
-	template<>	ComponentSet GetComponentType<CameraComponent>()		{	return ComponentSet::Camera;		}
-
-
 	template<typename T>
 	T* GetComponent(const unsigned int pEntityId)
 	{
-		Entity &entity = mEntities[pEntityId];
-		if(entity.GetGlobalId() == -1)
+		std::unordered_map<unsigned int, Entity>::iterator entityIt = mEntities.find(pEntityId);
+		if(entityIt == mEntities.end())
 		{
-			mEntities.erase(pEntityId);
 			return nullptr;
 		}
+		
+		Entity &entity = entityIt->second;
 
 		unsigned int archetypeIndex = GetArchetypeDataIndex(entity.GetComponentSet());	
 		ComponentSet componentType = ComponentSet::None;
@@ -97,31 +165,6 @@ struct EntityAdmin
 
 private:
 	template<typename T>
-	int RemoveComponentsFromArchetype(const ComponentSet pComponentSet, const unsigned int pArchetypeIndex, const unsigned int pRowIndex)
-	{
-		// check if pComponentSet exists in old archetype
-
-		// check if pRowIndex is valid for old archetype
-
-		// define new archetype
-
-		// 'move' to the other archetype, without removed components
-
-
-		auto it = mArchetypesData[pArchetypeIndex].mStorage.find(componentType);
-		if(it == mArchetypesData[pArchetypeIndex].mStorage.end())
-		{
-			it = mArchetypesData[pArchetypeIndex].mStorage.insert(std::make_pair(componentType, new ActualStorage<T>())).first;
-		}
-		ComponentStorage *baseStorage = it->second;
-
-		ActualStorage<T> *actualStorage = static_cast<ActualStorage<T>*>(baseStorage);
-		actualStorage->actualVector.emplace_back(comp);
-
-		return static_cast<int>(actualStorage->actualVector.size()) - 1;
-	}
-
-	template<typename T>
 	int AddComponentToArchetype(T comp, const unsigned int pArchetypeIndex)
 	{
 		ComponentSet componentType = ComponentSet::None;
@@ -139,7 +182,7 @@ private:
 		auto it = mArchetypesData[pArchetypeIndex].mStorage.find(componentType);
 		if(it == mArchetypesData[pArchetypeIndex].mStorage.end())
 		{
-			it = mArchetypesData[pArchetypeIndex].mStorage.insert(std::make_pair(componentType, new ActualStorage<T>())).first;
+			return -1;	// forgot to register component type?
 		}
 		ComponentStorage *baseStorage = it->second;
 
@@ -148,16 +191,17 @@ private:
 
 		return static_cast<int>(actualStorage->actualVector.size()) - 1;
 	}
-	/** TO DO NEW SETUP !!! **/
-	/*bool CopyComponentsBetweenArchetypes(const unsigned int pEntityId, const unsigned int pSourceArchetype, const unsigned int pTargetArchetype)
+	
+	int CopyComponentsBetweenArchetypes(const unsigned int pEntityId, const unsigned int pSourceArchetype, const unsigned int pTargetArchetype)
 	{
 		if(pEntityId > mLastEntityId) 
 		{
-			return false;
+			return -1;
 		}
-		auto && entity = mEntities[pEntityId];
+		auto && entity = mEntities[pEntityId];			// better use .find
 		unsigned int sourceRowIndex = entity.GetRowIndex();
 		// add check for invalid -1
+
 		unsigned int destRowIndex = 0;
 
 		ComponentSet sourceSet = mArchetypesData[pSourceArchetype].mComponentSet;
@@ -175,17 +219,25 @@ private:
 					auto srcIt = mArchetypesData[pSourceArchetype].mStorage.find(componentType);
 					ComponentStorage *sourceStorage = srcIt->second; 
 
-					auto destIt = mArchetypesData[pTargetArchetype].mStorage.find(componentType);
-					ComponentStorage *destStorage = destIt->second; 
+					// not checking if target storage exist, if not, create
+					ComponentStorage *destStorage = mArchetypesData[pTargetArchetype].mStorage[componentType];
+					if(destStorage == nullptr)
+					{
+						return -1;	// forgot to register component type?
+					}
 
 					destRowIndex = destStorage->CopyComponentFromOtherStorage(sourceStorage, sourceRowIndex);
 				}
 			}
 		}
-		entity.SetRowIndex(destRowIndex);
-	}*/
+		return destRowIndex;
+	}
 	
+	ArchetypeStorageFactory mArchetypeStorageFactory;
+
 	unsigned int mLastEntityId;
 };
+
+
 
 #endif

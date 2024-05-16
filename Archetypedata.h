@@ -7,6 +7,9 @@
 #include <vector>
 #include <map>
 
+struct ArchetypeStorageFactory;
+
+
 struct ComponentStorage
 {
 	virtual unsigned int CopyComponentFromOtherStorage(ComponentStorage *pSourceStorage, unsigned int pSourceIndex) = 0;
@@ -44,13 +47,13 @@ struct ActualStorage : ComponentStorage
 
 struct ArchetypeData
 {
-	ArchetypeData(const ComponentSet &pComponentSet) : mComponentSet(pComponentSet) { }
+	ArchetypeData(const ComponentSet &pComponentSet, ArchetypeStorageFactory *storageFactoryPtr);
 	
 	std::vector<unsigned int>		mEntityIds;
 
 	std::map<ComponentSet, ComponentStorage*>	mStorage;
 
-	ComponentSet mComponentSet;
+	ComponentSet				mComponentSet;
 
 	void AddEntityIdForAddedRow(const unsigned int pEntityId);
 	int DeleteRow(const unsigned int pIndex);
