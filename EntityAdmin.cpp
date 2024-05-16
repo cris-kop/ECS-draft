@@ -74,11 +74,6 @@ int EntityAdmin::AddCamera(const Vector3f &pPos, const Vector3f &pRot, const Vec
 
 bool EntityAdmin::DeleteEntity(const unsigned int pEntityId)
 {
-	if(pEntityId > mLastEntityId) 
-	{
-		return false;
-	}
-	
 	std::unordered_map<unsigned int, Entity>::iterator it = mEntities.find(pEntityId);
 	if(it == mEntities.end())
 	{

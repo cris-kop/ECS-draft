@@ -194,13 +194,19 @@ private:
 	
 	int CopyComponentsBetweenArchetypes(const unsigned int pEntityId, const unsigned int pSourceArchetype, const unsigned int pTargetArchetype)
 	{
-		if(pEntityId > mLastEntityId) 
+		std::unordered_map<unsigned int, Entity>::iterator entityIt = mEntities.find(pEntityId);
+		if(entityIt == mEntities.end())
 		{
 			return -1;
 		}
-		auto && entity = mEntities[pEntityId];			// better use .find
+		
+		Entity &entity = entityIt->second;
+		
 		unsigned int sourceRowIndex = entity.GetRowIndex();
-		// add check for invalid -1
+		if(sourceRowIndex == -1)
+		{
+			return -1;
+		}
 
 		unsigned int destRowIndex = 0;
 
@@ -217,10 +223,19 @@ private:
 				{
 					// copy component
 					auto srcIt = mArchetypesData[pSourceArchetype].mStorage.find(componentType);
+					if(srcIt == mArchetypesData[pSourceArchetype].mStorage.end())
+					{
+						return -1;
+					}
 					ComponentStorage *sourceStorage = srcIt->second; 
 
-					// not checking if target storage exist, if not, create
-					ComponentStorage *destStorage = mArchetypesData[pTargetArchetype].mStorage[componentType];
+					auto destIt = mArchetypesData[pTargetArchetype].mStorage.find(componentType);
+					if(destIt == mArchetypesData[pTargetArchetype].mStorage.end())
+					{
+						return -1;
+					}
+					ComponentStorage *destStorage = destIt->second; 
+
 					if(destStorage == nullptr)
 					{
 						return -1;	// forgot to register component type?
