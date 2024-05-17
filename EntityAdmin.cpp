@@ -1,7 +1,5 @@
 #include "EntityAdmin.h"
 
-#include <cassert>
-
 EntityAdmin::EntityAdmin()
 {
 	mLastEntityId = 0;
@@ -74,13 +72,12 @@ int EntityAdmin::AddCamera(const Vector3f &pPos, const Vector3f &pRot, const Vec
 
 bool EntityAdmin::DeleteEntity(const unsigned int pEntityId)
 {
-	std::unordered_map<unsigned int, Entity>::iterator it = mEntities.find(pEntityId);
-	if(it == mEntities.end())
+	if(!EntityExists(pEntityId))
 	{
 		return false;
 	}
+	Entity &entity = mEntities[pEntityId];
 
-	Entity &entity = it->second;
 	unsigned int archetypeIndex = GetArchetypeDataIndex(entity.GetComponentSet());
 
 	// remove archetype components data
@@ -100,13 +97,11 @@ bool EntityAdmin::DeleteEntity(const unsigned int pEntityId)
 
 int EntityAdmin::DuplicateEntity(const unsigned int pSourceEntityId)
 {
-	std::unordered_map<unsigned int, Entity>::iterator it = mEntities.find(pSourceEntityId);
-	if(it == mEntities.end())
+	if(!EntityExists(pSourceEntityId))
 	{
-		return -1;
+		return false;
 	}
-
-	auto && sourceEntity = it->second;
+	Entity &sourceEntity = mEntities[pSourceEntityId];
 	
 	++mLastEntityId;
 	mEntities.insert(std::make_pair(mLastEntityId, Entity(mEntities[pSourceEntityId], mLastEntityId)));
@@ -132,9 +127,33 @@ void EntityAdmin::UpdateSystems()
 	}
 }
 
-// PRIVATE
-
-const Entity& EntityAdmin::GetEntity(unsigned int pId)
+const Entity& EntityAdmin::GetEntity(const unsigned int pEntityId)
 {
-	return mEntities[pId];
+	return mEntities[pEntityId];
+}
+
+
+
+
+bool EntityAdmin::EntityExists(const unsigned int pEntityId) const
+{
+	std::unordered_map<unsigned int, Entity>::const_iterator entityIt = mEntities.find(pEntityId);
+	if(entityIt == mEntities.end())
+	{
+		return false;
+	}
+	return true;
+}
+
+void EntityAdmin::UpdateRowIndices(const unsigned int pEntityId, const unsigned int pOldRowIndex, const unsigned int pOldArchetypeIndex, const unsigned int pNewRowIndex, const unsigned int pNewArchetypeIndex)
+{
+	// no validation
+	mEntities[pEntityId].SetRowIndex(pNewRowIndex);
+	mArchetypesData[pNewArchetypeIndex].AddEntityIdForAddedRow(pEntityId);
+
+	int movedEntityId = mArchetypesData[pOldArchetypeIndex].DeleteRow(pOldRowIndex);
+	if(movedEntityId != -1)
+	{
+		mEntities[movedEntityId].SetRowIndex(pOldRowIndex);
+	}
 }

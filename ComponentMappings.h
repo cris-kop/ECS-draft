@@ -20,4 +20,16 @@ static const std::unordered_map<ComponentSet, std::type_index> gCOMPONENT_MAP_IN
 	{ ComponentSet::Camera, typeid(CameraComponent) }
 };
 
+template<typename T>
+ComponentSet GetComponentType()
+{
+	std::unordered_map<std::type_index, ComponentSet>::const_iterator setIt = gCOMPONENT_MAP.find(typeid(T));
+	if(setIt != gCOMPONENT_MAP.end())
+	{
+		return setIt->second;
+	}
+	return ComponentSet::None;
+}
+	
+
 #endif

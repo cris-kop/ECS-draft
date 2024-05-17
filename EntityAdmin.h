@@ -9,23 +9,21 @@
 #include "ArchetypeStorageFactory.h"
 
 #include <vector>
-#include <cassert>
 #include <unordered_map>
 #include <typeindex>
-
-#include <bitset>
 
 struct EntityAdmin
 {
 	EntityAdmin();
 	
-	const Entity& GetEntity(unsigned int pId);
+	bool EntityExists(const unsigned int pEntityId)			const;
 
+	const Entity& GetEntity(const unsigned int pEntityId);
 	void Init();
 
 	unsigned int GetArchetypeDataIndex(const ComponentSet pComponentSet);
 
-	// add 'logical archetypes'
+	// add 'logical archetypes' - testing purpose
 	int AddWorldProp(const Vector3f &pPos, const Vector3f &pRot, const Vector3f &pScale);
 	int AddCamera(const Vector3f &pPos, const Vector3f &pRot, const Vector3f &pScale, const Vector3f &pLookAt, const Vector3f &pYawPitchRoll);
 
@@ -33,25 +31,18 @@ struct EntityAdmin
 	template<typename T>
 	bool AttachComponent(T comp, const unsigned int pEntityId)
 	{
-		std::unordered_map<unsigned int, Entity>::iterator entityIt = mEntities.find(pEntityId);
-		if(entityIt == mEntities.end())
+		if(!EntityExists(pEntityId))
 		{
 			return false;
 		}
-		Entity &entity = entityIt->second;
+		Entity &entity = mEntities[pEntityId];
 
 		ComponentSet oldSet = entity.GetComponentSet();
 		int oldRowIndex = entity.GetRowIndex();
 		unsigned int oldArchetypeIndex = GetArchetypeDataIndex(oldSet);
-
-		ComponentSet newComponentType = ComponentSet::None;
-
-		std::unordered_map<std::type_index, ComponentSet>::const_iterator setIt = gCOMPONENT_MAP.find(typeid(T));
-		if(setIt != gCOMPONENT_MAP.end())
-		{
-			newComponentType = setIt->second;
-		}
-		else
+		
+		ComponentSet newComponentType = GetComponentType<T>();
+		if(newComponentType == ComponentSet::None)
 		{
 			return false;
 		}
@@ -60,7 +51,9 @@ struct EntityAdmin
 		{
 			return false;
 		}
-		entity.SetComponentSet(oldSet | newComponentType);
+
+		ComponentSet newSet = oldSet | newComponentType;
+		entity.SetComponentSet(newSet);
 		unsigned int newArchetypeIndex = GetArchetypeDataIndex(entity.GetComponentSet());
 
 		int newRowIndex = AddComponentToArchetype(comp, newArchetypeIndex);
@@ -69,30 +62,23 @@ struct EntityAdmin
 		{
 			CopyComponentsBetweenArchetypes(pEntityId, oldArchetypeIndex, newArchetypeIndex);
 		}
-		entity.SetRowIndex(newRowIndex);
-
-		mArchetypesData[newArchetypeIndex].AddEntityIdForAddedRow(pEntityId);
-
-		int movedEntityId = mArchetypesData[oldArchetypeIndex].DeleteRow(oldRowIndex);
-		if(movedEntityId != -1)
-		{
-			mEntities[movedEntityId].SetRowIndex(oldRowIndex);
-		}
+	
+		UpdateRowIndices(pEntityId, oldRowIndex, oldArchetypeIndex, newRowIndex, newArchetypeIndex);
 		return true;
 	}
 
 	// Remove component(s) from entity
 	bool RemoveComponent(const ComponentSet pComponentType, const unsigned int pEntityId)
 	{
-		std::unordered_map<unsigned int, Entity>::iterator entityIt = mEntities.find(pEntityId);
-		if(entityIt == mEntities.end())
+		if(!EntityExists(pEntityId))
 		{
 			return false;
 		}
-		Entity &entity = entityIt->second;
+		Entity &entity = mEntities[pEntityId];
 
 		ComponentSet oldSet = entity.GetComponentSet();
 		int oldRowIndex = entity.GetRowIndex();
+		unsigned int oldArchetypeIndex = GetArchetypeDataIndex(oldSet);
 
 		if(!Contains(oldSet, pComponentType))
 		{
@@ -100,20 +86,12 @@ struct EntityAdmin
 		}
 
 		ComponentSet newSet = oldSet & ~pComponentType;
-
-		unsigned int oldArchetypeIndex = GetArchetypeDataIndex(oldSet);
+		entity.SetComponentSet(newSet);
 		unsigned int newArchetypeIndex = GetArchetypeDataIndex(newSet);
 
-		entity.SetComponentSet(newSet);
-		entity.SetRowIndex(CopyComponentsBetweenArchetypes(pEntityId, oldArchetypeIndex, newArchetypeIndex));
+		int newRowIndex = CopyComponentsBetweenArchetypes(pEntityId, oldArchetypeIndex, newArchetypeIndex);
 
-		mArchetypesData[newArchetypeIndex].AddEntityIdForAddedRow(pEntityId);
-
-		int movedEntityId = mArchetypesData[oldArchetypeIndex].DeleteRow(oldRowIndex);
-		if(movedEntityId != -1)
-		{
-			mEntities[movedEntityId].SetRowIndex(oldRowIndex);
-		}
+		UpdateRowIndices(pEntityId, oldRowIndex, oldArchetypeIndex, newRowIndex, newArchetypeIndex);	
 		return true;
 	}
 
@@ -126,26 +104,19 @@ struct EntityAdmin
 	template<typename T>
 	T* GetComponent(const unsigned int pEntityId)
 	{
-		std::unordered_map<unsigned int, Entity>::iterator entityIt = mEntities.find(pEntityId);
-		if(entityIt == mEntities.end())
+		if(!EntityExists(pEntityId))
 		{
 			return nullptr;
 		}
-		
-		Entity &entity = entityIt->second;
+		Entity &entity = mEntities[pEntityId];
+
+		ComponentSet componentType = GetComponentType<T>();
+		if(componentType == ComponentSet::None)
+		{
+			return nullptr;
+		}
 
 		unsigned int archetypeIndex = GetArchetypeDataIndex(entity.GetComponentSet());	
-		ComponentSet componentType = ComponentSet::None;
-
-		std::unordered_map<std::type_index, ComponentSet>::const_iterator setIt = gCOMPONENT_MAP.find(typeid(T));
-		if(setIt != gCOMPONENT_MAP.end())
-		{
-			componentType = setIt->second;
-		}
-		else
-		{
-			return nullptr;
-		}
 
 		auto it = mArchetypesData[archetypeIndex].mStorage.find(componentType);
 		if(it == mArchetypesData[archetypeIndex].mStorage.end())
@@ -167,14 +138,8 @@ private:
 	template<typename T>
 	int AddComponentToArchetype(T comp, const unsigned int pArchetypeIndex)
 	{
-		ComponentSet componentType = ComponentSet::None;
-
-		std::unordered_map<std::type_index, ComponentSet>::const_iterator setIt = gCOMPONENT_MAP.find(typeid(T));
-		if(setIt != gCOMPONENT_MAP.end())
-		{
-			componentType = setIt->second;
-		}
-		else
+		ComponentSet componentType = GetComponentType<T>();
+		if(componentType == ComponentSet::None)
 		{
 			return -1;
 		}
@@ -194,13 +159,11 @@ private:
 	
 	int CopyComponentsBetweenArchetypes(const unsigned int pEntityId, const unsigned int pSourceArchetype, const unsigned int pTargetArchetype)
 	{
-		std::unordered_map<unsigned int, Entity>::iterator entityIt = mEntities.find(pEntityId);
-		if(entityIt == mEntities.end())
+		if(!EntityExists(pEntityId))
 		{
 			return -1;
 		}
-		
-		Entity &entity = entityIt->second;
+		Entity &entity = mEntities[pEntityId];
 		
 		unsigned int sourceRowIndex = entity.GetRowIndex();
 		if(sourceRowIndex == -1)
@@ -247,9 +210,10 @@ private:
 		}
 		return destRowIndex;
 	}
+
+	void UpdateRowIndices(const unsigned int pEntityId, const unsigned int pOldRowIndex, const unsigned int pOldArchetypeIndex, const unsigned int pNewRowIndex, const unsigned int pNewArchetypeIndex);
 	
 	ArchetypeStorageFactory mArchetypeStorageFactory;
-
 	unsigned int mLastEntityId;
 };
 
