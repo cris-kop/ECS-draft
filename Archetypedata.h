@@ -36,7 +36,7 @@ struct ActualStorage : ComponentStorage
 
 	void DeleteComponent(const unsigned int pIndex)
 	{
-		ActualStorage<T> *sourceStorage = static_cast<ActualStorage<T>*>(this);		
+		//ActualStorage<T> *sourceStorage = static_cast<ActualStorage<T>*>(this);		
 		if(pIndex < actualVector.size() - 1)
 		{
 			actualVector[pIndex] = actualVector.back();

@@ -18,13 +18,12 @@ public:
 	template<typename T>	
 	void Register()
 	{
-		ComponentSet componentType = ComponentSet::None;
-
-		std::unordered_map<std::type_index, ComponentSet>::const_iterator setIt = gCOMPONENT_MAP.find(typeid(T));
-		if(setIt != gCOMPONENT_MAP.end())
+		ComponentSet componentType = GetComponentType<T>();
+		if(componentType == ComponentSet::None)
 		{
-			componentType = setIt->second;
+			return ;
 		}
+
 		ComponentSetToStorage.emplace(componentType, []()
 		{
 			return new ActualStorage<T>();

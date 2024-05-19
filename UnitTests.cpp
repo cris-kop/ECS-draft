@@ -8,7 +8,7 @@
 namespace UnitTests
 {
 
-// UNIT TESTS - VALIDATING RESULTS
+// VALIDATING RESULTS
 
 bool ValidateCreateComponents()
 {

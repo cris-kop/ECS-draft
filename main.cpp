@@ -11,7 +11,6 @@
 EntityAdmin myAdmin;
 std::vector<int> entityIds;
 
-// add RemoveComponent function
 // properly reusing free/deleted archetype rows?
 // typeid OR ComponentSet enum?
 

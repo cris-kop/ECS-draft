@@ -14,12 +14,6 @@ static const std::unordered_map<std::type_index, ComponentSet> gCOMPONENT_MAP =
 	{ typeid(CameraComponent), ComponentSet::Camera }
 };
 
-static const std::unordered_map<ComponentSet, std::type_index> gCOMPONENT_MAP_INV = 
-{
-	{ ComponentSet::Transform, typeid(TransformComponent) },
-	{ ComponentSet::Camera, typeid(CameraComponent) }
-};
-
 template<typename T>
 ComponentSet GetComponentType()
 {

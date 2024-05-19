@@ -58,14 +58,4 @@ inline bool Contains(const ComponentSet pSource, const ComponentSet pIncludesSet
     return((pSource & pIncludesSet) == pIncludesSet);
 }
 
-inline bool SetHasOneComponent(const ComponentSet pSet)
-{
-    uint64_t componentSet = static_cast<uint64_t>(pSet);
-    if(componentSet&(((bool)(componentSet&(componentSet-1)))-1))
-    {
-        return true;
-    }
-    return false;
-}
-
 #endif
