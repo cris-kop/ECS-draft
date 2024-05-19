@@ -11,7 +11,6 @@
 EntityAdmin myAdmin;
 std::vector<int> entityIds;
 
-// properly reusing free/deleted archetype rows?
 // typeid OR ComponentSet enum?
 
 int WINAPI WinMain(HINSTANCE hInstance,
