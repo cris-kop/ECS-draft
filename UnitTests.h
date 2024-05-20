@@ -22,23 +22,22 @@ bool ValidateRemoveComponent(T pComponentRemoved, const ComponentSet pComponentE
 	ComponentSet currSet = myAdmin.GetEntity(pEntityId).mComponentSet;
 
 	// no error catching here
-	ComponentSet componentRemovedType = ComponentSet::None;
-
-	std::unordered_map<std::type_index, ComponentSet>::const_iterator setIt = gCOMPONENT_MAP.find(typeid(T));
-	if(setIt != gCOMPONENT_MAP.end())
-	{
-		componentRemovedType = setIt->second;
-	}
-
-	if(!Contains(currSet, pComponentExisting))
-	{
-		passed = false; 
-	}
-	if(Contains(currSet, componentRemovedType))
+	ComponentSet componentRemovedType = T::sType;
+	if(componentRemovedType == ComponentSet::None)
 	{
 		passed = false;
 	}
-
+	else
+	{
+		if(!Contains(currSet, pComponentExisting))
+		{
+			passed = false; 
+		}
+		if(Contains(currSet, componentRemovedType))
+		{
+			passed = false;
+		}
+	}
 	if(myAdmin.GetComponent<T>(pEntityId) != nullptr)	{ passed = false; }
 
 	LogPassed(passed, "Remove Component");

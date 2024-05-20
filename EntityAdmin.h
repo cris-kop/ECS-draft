@@ -5,7 +5,6 @@
 #include "Components.h"
 #include "Entity.h"
 #include "Systems.h"
-#include "ComponentMappings.h"
 #include "ArchetypeStorageFactory.h"
 
 #include <vector>
@@ -40,7 +39,7 @@ struct EntityAdmin
 		int oldRowIndex = entity.GetRowIndex();
 		unsigned int oldArchetypeIndex = GetArchetypeDataIndex(oldSet);
 		
-		ComponentSet newComponentType = GetComponentType<T>();
+		ComponentSet newComponentType = T::sType;
 		if(newComponentType == ComponentSet::None)
 		{
 			return false;
@@ -109,7 +108,13 @@ struct EntityAdmin
 		}
 		Entity &entity = mEntities[pEntityId];
 
-		ComponentSet componentType = GetComponentType<T>();
+		/*ComponentSet componentType = GetComponentType<T>();
+		if(componentType == ComponentSet::None)
+		{
+			return nullptr;
+		}*/
+
+		ComponentSet componentType = T::sType;
 		if(componentType == ComponentSet::None)
 		{
 			return nullptr;
@@ -137,7 +142,7 @@ private:
 	template<typename T>
 	int AddComponentToArchetype(T comp, const unsigned int pArchetypeIndex)
 	{
-		ComponentSet componentType = GetComponentType<T>();
+		ComponentSet componentType = T::sType;
 		if(componentType == ComponentSet::None)
 		{
 			return -1;

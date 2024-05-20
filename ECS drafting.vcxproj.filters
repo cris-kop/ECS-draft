@@ -68,8 +68,5 @@
     <ClInclude Include="ArchetypeStorageFactory.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="ComponentMappings.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
   </ItemGroup>
 </Project>

@@ -8,7 +8,6 @@
 
 #include "Archetypedata.h"
 #include "ComponentSet.h"
-#include "ComponentMappings.h"
 
 
 struct ArchetypeStorageFactory
@@ -17,7 +16,7 @@ public:
 	template<typename T>	
 	void Register()
 	{
-		ComponentSet componentType = GetComponentType<T>();
+		ComponentSet componentType = T::sType;
 		if(componentType == ComponentSet::None)
 		{
 			return ;

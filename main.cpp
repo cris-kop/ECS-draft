@@ -11,8 +11,6 @@
 EntityAdmin myAdmin;
 std::vector<int> entityIds;
 
-// typeid OR ComponentSet enum?
-
 int WINAPI WinMain(HINSTANCE hInstance,
 				   HINSTANCE hPrevInstance,
 				   LPSTR lpCmdLine,

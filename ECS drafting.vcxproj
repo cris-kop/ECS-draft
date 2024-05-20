@@ -152,7 +152,6 @@
   <ItemGroup>
     <ClInclude Include="Archetypedata.h" />
     <ClInclude Include="ArchetypeStorageFactory.h" />
-    <ClInclude Include="ComponentMappings.h" />
     <ClInclude Include="Components.h" />
     <ClInclude Include="ComponentSet.h" />
     <ClInclude Include="Entity.h" />
