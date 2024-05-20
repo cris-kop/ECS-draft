@@ -108,12 +108,6 @@ struct EntityAdmin
 		}
 		Entity &entity = mEntities[pEntityId];
 
-		/*ComponentSet componentType = GetComponentType<T>();
-		if(componentType == ComponentSet::None)
-		{
-			return nullptr;
-		}*/
-
 		ComponentSet componentType = T::sType;
 		if(componentType == ComponentSet::None)
 		{
