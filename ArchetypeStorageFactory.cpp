@@ -9,3 +9,8 @@ ComponentStorage* ArchetypeStorageFactory::Create(const ComponentSet componentTy
 	}
 	return factoryIt->second();
 }
+
+void ArchetypeStorageFactory::Destroy(ComponentStorage *pStorage)
+{
+	delete pStorage;
+}

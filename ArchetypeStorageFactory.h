@@ -29,6 +29,7 @@ public:
 	}
 
 	ComponentStorage* Create(const ComponentSet componentType);
+	void Destroy(ComponentStorage *pStorage);
 
 private:
 	std::unordered_map<ComponentSet, std::function<ComponentStorage*()>>ComponentSetToStorage;

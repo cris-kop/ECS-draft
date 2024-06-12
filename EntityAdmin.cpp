@@ -5,6 +5,14 @@ EntityAdmin::EntityAdmin()
 	mLastEntityId = 0;
 }
 
+EntityAdmin::~EntityAdmin()
+{
+	for(auto && system : mSystems)
+	{
+		delete system;
+	}
+}
+
 void EntityAdmin::Init()
 {
 	ISystem *worldPropSystem = new WorldPropsSystem(ComponentSet::Transform);
@@ -39,10 +47,9 @@ int EntityAdmin::AddWorldProp(const Vector3f &pPos, const Vector3f &pRot, const 
 	++mLastEntityId;
 	Entity newEntity(mLastEntityId);
 
-	TransformComponent myTransform(pPos, pRot, pScale);
-
 	mEntities.insert(std::make_pair(mLastEntityId, newEntity));
 
+	TransformComponent myTransform(pPos, pRot, pScale);
 	if(!AttachComponent(myTransform, mLastEntityId))
 	{
 		return -1;
@@ -133,8 +140,6 @@ const Entity& EntityAdmin::GetEntity(const unsigned int pEntityId)
 }
 
 
-
-
 bool EntityAdmin::EntityExists(const unsigned int pEntityId) const
 {
 	std::unordered_map<unsigned int, Entity>::const_iterator entityIt = mEntities.find(pEntityId);
@@ -145,15 +150,18 @@ bool EntityAdmin::EntityExists(const unsigned int pEntityId) const
 	return true;
 }
 
-void EntityAdmin::UpdateRowIndices(const unsigned int pEntityId, const unsigned int pOldRowIndex, const unsigned int pOldArchetypeIndex, const unsigned int pNewRowIndex, const unsigned int pNewArchetypeIndex)
+void EntityAdmin::UpdateRowIndices(const unsigned int pEntityId, const int pOldRowIndex, const int pOldArchetypeIndex, const unsigned int pNewRowIndex, const unsigned int pNewArchetypeIndex)
 {
 	// no validation
 	mEntities[pEntityId].SetRowIndex(pNewRowIndex);
 	mArchetypesData[pNewArchetypeIndex].AddEntityIdForAddedRow(pEntityId);
 
-	int movedEntityId = mArchetypesData[pOldArchetypeIndex].DeleteRow(pOldRowIndex);
-	if(movedEntityId != -1)
+	if(pOldArchetypeIndex != -1)
 	{
-		mEntities[movedEntityId].SetRowIndex(pOldRowIndex);
+		int movedEntityId = mArchetypesData[pOldArchetypeIndex].DeleteRow(pOldRowIndex);
+		if(movedEntityId != -1)
+		{
+			mEntities[movedEntityId].SetRowIndex(pOldRowIndex);
+		}
 	}
 }

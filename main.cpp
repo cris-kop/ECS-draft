@@ -8,6 +8,8 @@
 #include "TestData.h"
 #include "UnitTests.h"
 
+#include "vld.h"
+
 EntityAdmin myAdmin;
 std::vector<int> entityIds;
 
@@ -68,6 +70,6 @@ bool RunTests(const bool pStopAtFailed)
 	if(!UnitTests::ValidateDeleteEntity(entityToDuplicate+1))
 	{
 		if(pStopAtFailed)	{ return false; }
-	}	
+	}
 	return true;
 }

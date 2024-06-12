@@ -13,6 +13,7 @@
 struct EntityAdmin
 {
 	EntityAdmin();
+	~EntityAdmin();
 	
 	bool EntityExists(const unsigned int pEntityId)			const;
 
@@ -37,7 +38,12 @@ struct EntityAdmin
 
 		ComponentSet oldSet = entity.GetComponentSet();
 		int oldRowIndex = entity.GetRowIndex();
-		unsigned int oldArchetypeIndex = GetArchetypeDataIndex(oldSet);
+
+		int oldArchetypeIndex = -1;
+		if(oldSet != ComponentSet::None)
+		{
+			oldArchetypeIndex = GetArchetypeDataIndex(oldSet);
+		}
 		
 		ComponentSet newComponentType = T::sType;
 		if(newComponentType == ComponentSet::None)
@@ -178,7 +184,7 @@ private:
 		{		
 			if((static_cast<uint64_t>(sourceSet) >> i) & 1)
 			{
-				ComponentSet componentType = static_cast<ComponentSet>(1 << i);
+				ComponentSet componentType = static_cast<ComponentSet>(static_cast<uint64_t>(1) << i);
 
 				if(SetHasComponent(targetSet, componentType))
 				{
@@ -209,7 +215,7 @@ private:
 		return destRowIndex;
 	}
 
-	void UpdateRowIndices(const unsigned int pEntityId, const unsigned int pOldRowIndex, const unsigned int pOldArchetypeIndex, const unsigned int pNewRowIndex, const unsigned int pNewArchetypeIndex);
+	void UpdateRowIndices(const unsigned int pEntityId, const int pOldRowIndex, const int pOldArchetypeIndex, const unsigned int pNewRowIndex, const unsigned int pNewArchetypeIndex);
 	
 	ArchetypeStorageFactory mArchetypeStorageFactory;
 	unsigned int mLastEntityId;
