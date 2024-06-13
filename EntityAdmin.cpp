@@ -21,6 +21,9 @@ void EntityAdmin::Init()
 	mSystems.emplace_back(worldPropSystem);
 	mSystems.emplace_back(cameraSystem);
 
+	//Entity(const unsigned int pGlobalId) : mGlobalId(pGlobalId), mRowIndex(-1) { }
+	// std::unordered_map<unsigned int, Entity>	mEntities;
+
 	mEntities.insert(std::make_pair(mLastEntityId, Entity(0)));		// reserved
 
 	// Register components
@@ -111,7 +114,15 @@ int EntityAdmin::DuplicateEntity(const unsigned int pSourceEntityId)
 	Entity &sourceEntity = mEntities[pSourceEntityId];
 	
 	++mLastEntityId;
-	mEntities.insert(std::make_pair(mLastEntityId, Entity(mEntities[pSourceEntityId], mLastEntityId)));
+	mEntities.insert(std::make_pair(mLastEntityId, Entity(mLastEntityId, sourceEntity.GetRowIndex(), sourceEntity.GetComponentSet())));
+
+
+/*	std::unordered_map<unsigned int, Entity>	mEntities;
+
+	Entity(const unsigned int pGlobalId, const unsigned int pRowIndex, const ComponentSet pComponentSet) : mGlobalId(pGlobalId), mRowIndex(pRowIndex), mComponentSet(pComponentSet) { }
+
+	mEntities.insert(std::make_pair(mLastEntityId, Entity(mLastEntityId, sourceEntity.GetRowIndex(), sourceEntity.GetComponentSet())));*/
+
 
 	// copy components
 	unsigned int archetype = GetArchetypeDataIndex(sourceEntity.GetComponentSet());
