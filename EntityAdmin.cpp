@@ -21,10 +21,7 @@ void EntityAdmin::Init()
 	mSystems.emplace_back(worldPropSystem);
 	mSystems.emplace_back(cameraSystem);
 
-	//Entity(const unsigned int pGlobalId) : mGlobalId(pGlobalId), mRowIndex(-1) { }
-	// std::unordered_map<unsigned int, Entity>	mEntities;
-
-	mEntities.insert(std::make_pair(mLastEntityId, Entity(0)));		// reserved
+	mEntities.emplace(mLastEntityId, 0);		// reserved
 
 	// Register components
 	mArchetypeStorageFactory.Register<TransformComponent>();
@@ -48,10 +45,8 @@ unsigned int EntityAdmin::GetArchetypeDataIndex(const ComponentSet pComponentSet
 int EntityAdmin::AddWorldProp(const Vector3f &pPos, const Vector3f &pRot, const Vector3f &pScale)
 {
 	++mLastEntityId;
-	Entity newEntity(mLastEntityId);
-
-	mEntities.insert(std::make_pair(mLastEntityId, newEntity));
-
+	mEntities.emplace(mLastEntityId, mLastEntityId);
+	
 	TransformComponent myTransform(pPos, pRot, pScale);
 	if(!AttachComponent(myTransform, mLastEntityId))
 	{
@@ -63,12 +58,11 @@ int EntityAdmin::AddWorldProp(const Vector3f &pPos, const Vector3f &pRot, const 
 int EntityAdmin::AddCamera(const Vector3f &pPos, const Vector3f &pRot, const Vector3f &pScale, const Vector3f &pLookAt, const Vector3f &pYawPitchRoll)
 {
 	++mLastEntityId;
-	Entity newEntity(mLastEntityId);
+	mEntities.emplace(mLastEntityId, mLastEntityId);
 
 	TransformComponent myTransform(pPos, pRot, pScale);
 	CameraComponent myCamera(pLookAt, pYawPitchRoll);
 	
-	mEntities.insert(std::make_pair(mLastEntityId, newEntity));
 	if(!AttachComponent(myTransform, mLastEntityId))
 	{
 		return -1;
@@ -114,15 +108,7 @@ int EntityAdmin::DuplicateEntity(const unsigned int pSourceEntityId)
 	Entity &sourceEntity = mEntities[pSourceEntityId];
 	
 	++mLastEntityId;
-	mEntities.insert(std::make_pair(mLastEntityId, Entity(mLastEntityId, sourceEntity.GetRowIndex(), sourceEntity.GetComponentSet())));
-
-
-/*	std::unordered_map<unsigned int, Entity>	mEntities;
-
-	Entity(const unsigned int pGlobalId, const unsigned int pRowIndex, const ComponentSet pComponentSet) : mGlobalId(pGlobalId), mRowIndex(pRowIndex), mComponentSet(pComponentSet) { }
-
-	mEntities.insert(std::make_pair(mLastEntityId, Entity(mLastEntityId, sourceEntity.GetRowIndex(), sourceEntity.GetComponentSet())));*/
-
+	mEntities.try_emplace(mLastEntityId, mLastEntityId, sourceEntity.GetRowIndex(), sourceEntity.GetComponentSet());
 
 	// copy components
 	unsigned int archetype = GetArchetypeDataIndex(sourceEntity.GetComponentSet());
