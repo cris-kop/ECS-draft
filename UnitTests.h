@@ -19,7 +19,7 @@ template<typename T>
 bool ValidateRemoveComponent(T pComponentRemoved, const ComponentSet pComponentExisting, const unsigned int pEntityId)
 {
 	bool passed = true;
-	ComponentSet currSet = myAdmin.GetEntity(pEntityId).mComponentSet;
+	ComponentSet currSet = myAdmin.GetEntity(pEntityId)->GetComponentSet();
 
 	// no error catching here
 	ComponentSet componentRemovedType = T::sType;

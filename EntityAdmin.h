@@ -15,9 +15,7 @@ struct EntityAdmin
 	EntityAdmin();
 	~EntityAdmin();
 	
-	bool EntityExists(const unsigned int pEntityId)			const;
-
-	const Entity& GetEntity(const unsigned int pEntityId);
+	const Entity* GetEntity(const unsigned int pEntityId);
 	void Init();
 
 	unsigned int GetArchetypeDataIndex(const ComponentSet pComponentSet);
@@ -30,14 +28,14 @@ struct EntityAdmin
 	template<typename T>
 	bool AttachComponent(T comp, const unsigned int pEntityId)
 	{
-		if(!EntityExists(pEntityId))
+		std::unordered_map<unsigned int, Entity>::iterator entityIt = mEntities.find(pEntityId);
+		if(entityIt == mEntities.end())
 		{
 			return false;
 		}
-		Entity &entity = mEntities[pEntityId];
 
-		ComponentSet oldSet = entity.GetComponentSet();
-		int oldRowIndex = entity.GetRowIndex();
+		ComponentSet oldSet = entityIt->second.GetComponentSet();
+		int oldRowIndex = entityIt->second.GetRowIndex();
 
 		int oldArchetypeIndex = -1;
 		if(oldSet != ComponentSet::None)
@@ -57,8 +55,8 @@ struct EntityAdmin
 		}
 
 		ComponentSet newSet = oldSet | newComponentType;
-		entity.SetComponentSet(newSet);
-		unsigned int newArchetypeIndex = GetArchetypeDataIndex(entity.GetComponentSet());
+		entityIt->second.SetComponentSet(newSet);
+		unsigned int newArchetypeIndex = GetArchetypeDataIndex(entityIt->second.GetComponentSet());
 
 		int newRowIndex = AddComponentToArchetype(comp, newArchetypeIndex);
 
@@ -74,14 +72,14 @@ struct EntityAdmin
 	// Remove component(s) from entity
 	bool RemoveComponent(const ComponentSet pComponentType, const unsigned int pEntityId)
 	{
-		if(!EntityExists(pEntityId))
+		std::unordered_map<unsigned int, Entity>::iterator entityIt = mEntities.find(pEntityId);
+		if(entityIt == mEntities.end())
 		{
 			return false;
 		}
-		Entity &entity = mEntities[pEntityId];
 
-		ComponentSet oldSet = entity.GetComponentSet();
-		int oldRowIndex = entity.GetRowIndex();
+		ComponentSet oldSet = entityIt->second.GetComponentSet();
+		int oldRowIndex = entityIt->second.GetRowIndex();
 		unsigned int oldArchetypeIndex = GetArchetypeDataIndex(oldSet);
 
 		if(!Contains(oldSet, pComponentType))
@@ -90,7 +88,7 @@ struct EntityAdmin
 		}
 
 		ComponentSet newSet = oldSet & ~pComponentType;
-		entity.SetComponentSet(newSet);
+		entityIt->second.SetComponentSet(newSet);
 		unsigned int newArchetypeIndex = GetArchetypeDataIndex(newSet);
 
 		int newRowIndex = CopyComponentsBetweenArchetypes(pEntityId, oldArchetypeIndex, newArchetypeIndex);
@@ -108,11 +106,11 @@ struct EntityAdmin
 	template<typename T>
 	T* GetComponent(const unsigned int pEntityId)
 	{
-		if(!EntityExists(pEntityId))
+		std::unordered_map<unsigned int, Entity>::const_iterator entityIt = mEntities.find(pEntityId);
+		if(entityIt == mEntities.end())
 		{
 			return nullptr;
 		}
-		Entity &entity = mEntities[pEntityId];
 
 		ComponentSet componentType = T::sType;
 		if(componentType == ComponentSet::None)
@@ -120,7 +118,7 @@ struct EntityAdmin
 			return nullptr;
 		}
 
-		unsigned int archetypeIndex = GetArchetypeDataIndex(entity.GetComponentSet());	
+		unsigned int archetypeIndex = GetArchetypeDataIndex(entityIt->second.GetComponentSet());	
 
 		auto it = mArchetypesData[archetypeIndex].mStorage.find(componentType);
 		if(it == mArchetypesData[archetypeIndex].mStorage.end())
@@ -130,7 +128,7 @@ struct EntityAdmin
 		ComponentStorage *baseStorage = it->second;
 		ActualStorage<T> *actualStorage = static_cast<ActualStorage<T>*>(baseStorage);
 		
-		return &actualStorage->actualVector[entity.GetRowIndex()];
+		return &actualStorage->actualVector[entityIt->second.GetRowIndex()];
 	}
 
 	std::unordered_map<unsigned int, Entity>	mEntities;
@@ -163,13 +161,13 @@ private:
 	
 	int CopyComponentsBetweenArchetypes(const unsigned int pEntityId, const unsigned int pSourceArchetype, const unsigned int pTargetArchetype)
 	{
-		if(!EntityExists(pEntityId))
+		std::unordered_map<unsigned int, Entity>::const_iterator entityIt = mEntities.find(pEntityId);
+		if(entityIt == mEntities.end())
 		{
 			return -1;
 		}
-		Entity &entity = mEntities[pEntityId];
 		
-		unsigned int sourceRowIndex = entity.GetRowIndex();
+		unsigned int sourceRowIndex = entityIt->second.GetRowIndex();
 		if(sourceRowIndex == -1)
 		{
 			return -1;

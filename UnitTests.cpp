@@ -63,7 +63,7 @@ bool ValidateDuplicateEntity(const unsigned int pSourceEntityId, const unsigned 
 	if(TransformA->mPosRotScale != TransformB->mPosRotScale)					{ passed = false; }
 	if(CameraA->mLookAtPlusPosRotScale != CameraB -> mLookAtPlusPosRotScale)	{ passed = false; }
 
-	if(myAdmin.GetEntity(pSourceEntityId).GetComponentSet() != myAdmin.GetEntity(pTargetEntityId).GetComponentSet())		{ passed = false; }
+	if(myAdmin.GetEntity(pSourceEntityId)->GetComponentSet() != myAdmin.GetEntity(pTargetEntityId)->GetComponentSet())		{ passed = false; }
 	
 	LogPassed(passed, "Duplicate Entity");
 	return passed;
@@ -71,7 +71,7 @@ bool ValidateDuplicateEntity(const unsigned int pSourceEntityId, const unsigned 
 
 bool ValidateDeleteEntity(const unsigned int pEntityId)
 {
-	bool passed = myAdmin.GetEntity(pEntityId).GetGlobalId() == -1;
+	bool passed = myAdmin.GetEntity(pEntityId) == nullptr;
 	LogPassed(passed, "Delete Entity");
 	return passed;
 }

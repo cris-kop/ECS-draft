@@ -76,22 +76,27 @@ int EntityAdmin::AddCamera(const Vector3f &pPos, const Vector3f &pRot, const Vec
 
 bool EntityAdmin::DeleteEntity(const unsigned int pEntityId)
 {
-	if(!EntityExists(pEntityId))
+	std::unordered_map<unsigned int, Entity>::const_iterator entityIt = mEntities.find(pEntityId);
+	if(entityIt == mEntities.end())
 	{
 		return false;
 	}
-	Entity &entity = mEntities[pEntityId];
 
-	unsigned int archetypeIndex = GetArchetypeDataIndex(entity.GetComponentSet());
+	unsigned int archetypeIndex = GetArchetypeDataIndex(entityIt->second.GetComponentSet());
 
 	// remove archetype components data
-	unsigned int oldRowIndex = entity.GetRowIndex();
+	unsigned int oldRowIndex = entityIt->second.GetRowIndex();
 	if(oldRowIndex != -1)
 	{
-		int movedEntityId = mArchetypesData[archetypeIndex].DeleteRow(entity.GetRowIndex());
+		int movedEntityId = mArchetypesData[archetypeIndex].DeleteRow(entityIt->second.GetRowIndex());
 		if(movedEntityId != -1)
 		{
-			mEntities[movedEntityId].SetRowIndex(oldRowIndex);
+			std::unordered_map<unsigned int, Entity>::iterator movedEntityIt = mEntities.find(movedEntityId);
+			if(movedEntityIt == mEntities.end())
+			{
+				return false;
+			}
+			movedEntityIt->second.SetRowIndex(oldRowIndex);
 		}
 	}
 
@@ -101,19 +106,20 @@ bool EntityAdmin::DeleteEntity(const unsigned int pEntityId)
 
 int EntityAdmin::DuplicateEntity(const unsigned int pSourceEntityId)
 {
-	if(!EntityExists(pSourceEntityId))
+	std::unordered_map<unsigned int, Entity>::const_iterator sourceEntityIt = mEntities.find(pSourceEntityId);
+	if(sourceEntityIt == mEntities.end())
 	{
 		return false;
 	}
-	Entity &sourceEntity = mEntities[pSourceEntityId];
 	
 	++mLastEntityId;
-	mEntities.try_emplace(mLastEntityId, mLastEntityId, sourceEntity.GetRowIndex(), sourceEntity.GetComponentSet());
+	Entity newEntity(mLastEntityId, sourceEntityIt->second.GetRowIndex(), sourceEntityIt->second.GetComponentSet());
 
 	// copy components
-	unsigned int archetype = GetArchetypeDataIndex(sourceEntity.GetComponentSet());
-	mEntities[mLastEntityId].SetRowIndex(mArchetypesData[archetype].CopyRow(sourceEntity.GetRowIndex(), mLastEntityId));
-	
+	unsigned int archetype = GetArchetypeDataIndex(sourceEntityIt->second.GetComponentSet());
+	newEntity.SetRowIndex(mArchetypesData[archetype].CopyRow(sourceEntityIt->second.GetRowIndex(), mLastEntityId));
+
+	mEntities.try_emplace(mLastEntityId, newEntity);
 	return mLastEntityId;
 }
 
@@ -131,26 +137,26 @@ void EntityAdmin::UpdateSystems()
 	}
 }
 
-const Entity& EntityAdmin::GetEntity(const unsigned int pEntityId)
-{
-	return mEntities[pEntityId];
-}
-
-
-bool EntityAdmin::EntityExists(const unsigned int pEntityId) const
+const Entity* EntityAdmin::GetEntity(const unsigned int pEntityId)
 {
 	std::unordered_map<unsigned int, Entity>::const_iterator entityIt = mEntities.find(pEntityId);
 	if(entityIt == mEntities.end())
 	{
-		return false;
+		return nullptr;
 	}
-	return true;
+	return &entityIt->second;
 }
 
 void EntityAdmin::UpdateRowIndices(const unsigned int pEntityId, const int pOldRowIndex, const int pOldArchetypeIndex, const unsigned int pNewRowIndex, const unsigned int pNewArchetypeIndex)
 {
 	// no validation
-	mEntities[pEntityId].SetRowIndex(pNewRowIndex);
+	std::unordered_map<unsigned int, Entity>::iterator entityIt = mEntities.find(pEntityId);
+	if(entityIt == mEntities.end())
+	{
+		return;
+	}
+	
+	entityIt->second.SetRowIndex(pNewRowIndex);
 	mArchetypesData[pNewArchetypeIndex].AddEntityIdForAddedRow(pEntityId);
 
 	if(pOldArchetypeIndex != -1)
@@ -158,7 +164,12 @@ void EntityAdmin::UpdateRowIndices(const unsigned int pEntityId, const int pOldR
 		int movedEntityId = mArchetypesData[pOldArchetypeIndex].DeleteRow(pOldRowIndex);
 		if(movedEntityId != -1)
 		{
-			mEntities[movedEntityId].SetRowIndex(pOldRowIndex);
+			std::unordered_map<unsigned int, Entity>::iterator movedEntityIt = mEntities.find(movedEntityId);
+			if(movedEntityIt == mEntities.end())
+			{
+				return;
+			}
+			movedEntityIt->second.SetRowIndex(pOldRowIndex);
 		}
 	}
 }

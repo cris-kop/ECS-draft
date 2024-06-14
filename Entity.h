@@ -5,8 +5,6 @@
 
 struct Entity
 {
-	Entity() : mGlobalId(-1), mRowIndex(-1) { }
-
 	Entity(const unsigned int pGlobalId) : mGlobalId(pGlobalId), mRowIndex(-1) { }
 	Entity(const unsigned int pGlobalId, const unsigned int pRowIndex, const ComponentSet pComponentSet) : mGlobalId(pGlobalId), mRowIndex(pRowIndex), mComponentSet(pComponentSet) { }
 
