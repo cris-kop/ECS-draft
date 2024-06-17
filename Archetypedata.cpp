@@ -33,24 +33,19 @@ ArchetypeData::ArchetypeData(const ArchetypeData& pOther)
 	CreateStorage();
 
 	// copy data from other storage to current
-	for(size_t i=0;i<64;++i)
-	{		
-		if((static_cast<uint64_t>(mComponentSet) >> i) & static_cast<uint64_t>(1))
-		{	
-			ComponentSet componentType = static_cast<ComponentSet>(1 << i);
-
-			auto it = pOther.mStorage.find(componentType);
-			if(it != pOther.mStorage.end())
-			{
-				mStorage[componentType]->CopyAllComponentsFromOtherStorage(it->second);			
-			}
+	for(auto && storage : mStorage)
+	{
+		auto it = pOther.mStorage.find(storage.first);
+		if(it != pOther.mStorage.end())
+		{
+			storage.second->CopyAllComponentsFromOtherStorage(it->second);
 		}
 	}
 }
 
 // Move constructor
 
-ArchetypeData::ArchetypeData(ArchetypeData&& pOther)
+ArchetypeData::ArchetypeData(ArchetypeData&& pOther) noexcept
 {
 	mEntityIds = pOther.mEntityIds;
 	mComponentSet = pOther.mComponentSet;
@@ -58,19 +53,11 @@ ArchetypeData::ArchetypeData(ArchetypeData&& pOther)
 	mStorageFactoryPtr = pOther.mStorageFactoryPtr;
 
 	// move storage pointers to new object
-	for(size_t i=0;i<64;++i)
-	{		
-		if((static_cast<uint64_t>(mComponentSet) >> i) & static_cast<uint64_t>(1))
-		{
-			ComponentSet componentType = static_cast<ComponentSet>(1 << i);
+	mStorage = pOther.mStorage;
 
-			auto it = pOther.mStorage.find(componentType);
-			if(it != pOther.mStorage.end())
-			{
-				mStorage[componentType] = it->second;
-				it->second = nullptr;
-			}
-		}
+	for(auto && storage : pOther.mStorage)
+	{
+		storage.second = nullptr;
 	}
 }
 
@@ -96,13 +83,9 @@ int ArchetypeData::DeleteRow(const unsigned int pIndex)
 	{
 		mEntityIds[pIndex] = mEntityIds.back();
 		
-		for(size_t i=0;i<64;++i)
-		{		
-			if((static_cast<uint64_t>(mComponentSet) >> i) & static_cast<uint64_t>(1))
-			{
-				ComponentSet componentType = static_cast<ComponentSet>(1 << i);
-				mStorage[componentType]->DeleteComponent(pIndex);
-			}
+		for(auto && storage : mStorage)
+		{
+			storage.second->DeleteComponent(pIndex);
 		}
 		movedEntityId = mEntityIds[pIndex];
 	}
@@ -116,15 +99,11 @@ int ArchetypeData::CopyRow(const unsigned int pRowIndex, const unsigned pTargetE
 	{
 		return -1;
 	}
-
 	mEntityIds.emplace_back(pTargetEntityId);
-	for(size_t i=0;i<64;++i)
-	{		
-		if((static_cast<uint64_t>(mComponentSet) >> i) & static_cast<uint64_t>(1))
-		{
-			ComponentSet componentType = static_cast<ComponentSet>(1 << i);
-			mStorage[componentType]->CopyComponentFromOtherStorage(mStorage[componentType], pRowIndex);
-		}
+
+	for(auto && storage : mStorage)
+	{
+		storage.second->CopyComponentFromOtherStorage(storage.second, pRowIndex);
 	}
 	return static_cast<int>(mEntityIds.size()) - 1;		// new row index*/
 }
@@ -135,7 +114,7 @@ void ArchetypeData::CreateStorage()
 	{		
 		if((static_cast<uint64_t>(mComponentSet) >> i) & static_cast<uint64_t>(1))
 		{
-			ComponentSet componentType = static_cast<ComponentSet>(1 << i);
+			ComponentSet componentType = static_cast<ComponentSet>(static_cast<uint64_t>(1) << i);
 			mStorage[componentType] = mStorageFactoryPtr->Create(componentType);
 		}
 	}

@@ -66,7 +66,7 @@ public:
 	~ArchetypeData();
 
 	ArchetypeData(const ArchetypeData& pOther);				// copy constructor
-	ArchetypeData(ArchetypeData&& pOther);					// move constructor - TEMP deleted
+	ArchetypeData(ArchetypeData&& pOther) noexcept;			// move constructor - TEMP deleted
 
 	ArchetypeData& operator=(const ArchetypeData& other) = delete;		// copy assignment: not allowed
 	ArchetypeData& operator=(ArchetypeData&& other) = delete;			// move assignment: not allowed
