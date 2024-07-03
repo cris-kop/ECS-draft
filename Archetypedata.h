@@ -6,6 +6,8 @@
 
 #include <vector>
 #include <map>
+#include <span>
+#include <cassert>
 
 struct ArchetypeStorageFactory;
 
@@ -41,10 +43,7 @@ struct ActualStorage : ComponentStorage
 		ActualStorage<T> *sourceStorage = static_cast<ActualStorage<T>*>(pSourceStorage);
 		actualVector.reserve(sourceStorage->actualVector.size());
 
-		for(size_t index=0;index<sourceStorage->actualVector.size();++index)
-		{
-			actualVector.emplace_back(sourceStorage->actualVector[index]);
-		}
+		actualVector.insert(actualVector.end(), sourceStorage->actualVector.begin(), sourceStorage->actualVector.end());
 	}
 
 	void DeleteComponent(const unsigned int pIndex)
@@ -70,6 +69,20 @@ public:
 
 	ArchetypeData& operator=(const ArchetypeData& other) = delete;		// copy assignment: not allowed
 	ArchetypeData& operator=(ArchetypeData&& other) = delete;			// move assignment: not allowed
+
+	template <class T>
+	std::span<T> Get()
+	{
+		ComponentSet componentType = T::sType;
+
+		auto it = mStorage.find(componentType);
+		assert(it != mStorage.end());
+
+		ComponentStorage *baseStorage = it->second;
+		ActualStorage<T> *actualStorage = static_cast<ActualStorage<T>*>(baseStorage);
+
+		return std::span<T>(actualStorage->actualVector);
+	}
 
 	std::vector<unsigned int>		mEntityIds;
 

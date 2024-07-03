@@ -23,30 +23,12 @@ void CameraSystem::Update(ArchetypeData &pComponentsData)
 {
 	if(Contains(pComponentsData.mComponentSet, mComponentSet))
 	{
-		auto transformIt = pComponentsData.mStorage.find(ComponentSet::Transform);
-		if(transformIt == pComponentsData.mStorage.end())
+		std::span<TransformComponent> transforms = pComponentsData.Get<TransformComponent>();
+		std::span<CameraComponent> cameras = pComponentsData.Get<CameraComponent>();
+		
+		for(size_t index=0;index<transforms.size();++index)
 		{
-			return;	// assert here?
-		}
-
-		auto cameraIt = pComponentsData.mStorage.find(ComponentSet::Camera);
-		if(cameraIt == pComponentsData.mStorage.end())
-		{
-			return;	// assert here?
-		}
-
-		ComponentStorage *transformBaseStorage = transformIt->second;
-		ActualStorage<TransformComponent> *transformStorage = static_cast<ActualStorage<TransformComponent>*>(transformBaseStorage);
-			
-		ComponentStorage *cameraBaseStorage = cameraIt->second;
-		ActualStorage<CameraComponent> *cameraStorage = static_cast<ActualStorage<CameraComponent>*>(cameraBaseStorage);
-
-		for(size_t index=0;index<transformStorage->actualVector.size();++index)
-		{
-			auto && camera = cameraStorage->actualVector[index];
-			auto && transform = transformStorage->actualVector[index];
-
-			camera.mLookAtPlusPosRotScale = camera.mLookAt + transform.mPosRotScale;
+			cameras[index].mLookAtPlusPosRotScale = cameras[index].mLookAt + transforms[index].mPosRotScale;
 		}
 	}
 }

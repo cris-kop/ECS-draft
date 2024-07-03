@@ -18,6 +18,8 @@ struct TransformComponent : public BaseComponent<ComponentSet::Transform>
 
 	Vector3f mPosRotScale;	// just illustrative
 
+	static constexpr ComponentSet sType = ComponentSet::Transform;
+
 	TransformComponent() { }
 	TransformComponent(const Vector3f &pPos, const Vector3f &pRot, const Vector3f &pScale)
 		: mPos(pPos), mRot(pRot), mScale (pScale) { }
@@ -30,7 +32,7 @@ struct CameraComponent : public BaseComponent<ComponentSet::Camera>
 
 	Vector3f mLookAtPlusPosRotScale;		// just illustrative
 
-	static const ComponentSet sType = ComponentSet::Camera;
+	static constexpr ComponentSet sType = ComponentSet::Camera;
 
 	CameraComponent() { }
 	CameraComponent(const Vector3f &pLookAt, const Vector3f &pYawPitchRoll)
