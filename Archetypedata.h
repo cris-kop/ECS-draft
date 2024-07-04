@@ -3,6 +3,7 @@
 
 #include "Components.h"
 #include "ComponentSet.h"
+#include "SpansRange.h"
 
 #include <vector>
 #include <map>
@@ -82,6 +83,15 @@ public:
 		ActualStorage<T> *actualStorage = static_cast<ActualStorage<T>*>(baseStorage);
 
 		return std::span<T>(actualStorage->actualVector);
+	}
+
+	template<class... Ts>
+	SpansRange<Ts...> GetSpans()
+	{
+		return
+		{
+			Get<Ts>()...
+		};
 	}
 
 	std::vector<unsigned int>		mEntityIds;

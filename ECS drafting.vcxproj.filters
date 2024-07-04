@@ -68,5 +68,8 @@
     <ClInclude Include="ArchetypeStorageFactory.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="SpansRange.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

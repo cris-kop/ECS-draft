@@ -159,6 +159,7 @@
     <ClInclude Include="Entity.h" />
     <ClInclude Include="EntityAdmin.h" />
     <ClInclude Include="Main.h" />
+    <ClInclude Include="SpansRange.h" />
     <ClInclude Include="Systems.h" />
     <ClInclude Include="TestData.h" />
     <ClInclude Include="UnitTests.h" />
