@@ -47,7 +47,6 @@ struct SpansRange
         size_t          index_;
     };
 
-    //explicit SpansRange(std::span<T> t, std::span<Ts>... ts) : spans(t, ts...), size_(t.size()) {
     SpansRange(std::span<T> t, std::span<Ts>... ts) : spans(t, ts...), size_(t.size()) 
     { 
     }

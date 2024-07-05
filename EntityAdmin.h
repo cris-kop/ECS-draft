@@ -135,6 +135,7 @@ struct EntityAdmin
 	
 	std::vector<ArchetypeData>		mArchetypesData;
 	std::vector<ISystem*>			mSystems;
+	std::vector<std::vector<int>>	mSystemArchetypeMatches;
 
 private:
 	template<typename T>

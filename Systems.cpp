@@ -2,9 +2,9 @@
 
 void WorldPropsSystem::Update(ArchetypeData &pComponentsData)
 {
-	std::span<TransformComponent> transforms = pComponentsData.Get<TransformComponent>();
-			
-	for(auto && transform : transforms)
+	SpansRange components = pComponentsData.GetSpans<TransformComponent>();
+	
+	for(auto && [transform] : components)
 	{
 		transform.mPosRotScale = transform.mPos + transform.mRot + transform.mScale;
 	}
