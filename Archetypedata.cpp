@@ -78,15 +78,16 @@ int ArchetypeData::DeleteRow(const unsigned int pIndex)
 	
 	int movedEntityId = -1;
 
-	// check if it's not the last row
+	// delete all contents for deleted row
+	for(auto && storage : mStorage)
+	{
+		storage.second->DeleteComponent(pIndex);
+	}
+
+	// copy components to freed index, if it was not the last row
 	if(pIndex != mEntityIds.size() - 1)
 	{
 		mEntityIds[pIndex] = mEntityIds.back();
-		
-		for(auto && storage : mStorage)
-		{
-			storage.second->DeleteComponent(pIndex);
-		}
 		movedEntityId = mEntityIds[pIndex];
 	}
 	mEntityIds.pop_back();

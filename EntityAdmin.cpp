@@ -2,7 +2,7 @@
 
 EntityAdmin::EntityAdmin()
 {
-	mLastEntityId = 0;
+	// nothing to do
 }
 
 EntityAdmin::~EntityAdmin()
@@ -21,6 +21,7 @@ void EntityAdmin::Init()
 	mSystems.emplace_back(worldPropSystem);
 	mSystems.emplace_back(cameraSystem);
 
+	mLastEntityId = 0;
 	mEntities.emplace(mLastEntityId, 0);		// reserved
 
 	// Register components
@@ -120,6 +121,7 @@ int EntityAdmin::DuplicateEntity(const unsigned int pSourceEntityId)
 	newEntity.SetRowIndex(mArchetypesData[archetype].CopyRow(sourceEntityIt->second.GetRowIndex(), mLastEntityId));
 
 	mEntities.try_emplace(mLastEntityId, newEntity);
+
 	return mLastEntityId;
 }
 
