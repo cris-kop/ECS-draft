@@ -156,6 +156,7 @@
     <ClInclude Include="ArchetypeStorageFactory.h" />
     <ClInclude Include="Components.h" />
     <ClInclude Include="ComponentSet.h" />
+    <ClInclude Include="ComponentStorage.h" />
     <ClInclude Include="Entity.h" />
     <ClInclude Include="EntityAdmin.h" />
     <ClInclude Include="Main.h" />

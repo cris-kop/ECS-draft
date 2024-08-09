@@ -84,7 +84,7 @@ int ArchetypeData::DeleteRow(const unsigned int pIndex)
 		storage.second->DeleteComponent(pIndex);
 	}
 
-	// copy components to freed index, if it was not the last row
+	// moved entity id if it was not the last row
 	if(pIndex != mEntityIds.size() - 1)
 	{
 		mEntityIds[pIndex] = mEntityIds.back();
@@ -101,12 +101,13 @@ int ArchetypeData::CopyRow(const unsigned int pRowIndex, const unsigned pTargetE
 		return -1;
 	}
 	mEntityIds.emplace_back(pTargetEntityId);
+	int newRowIndex = static_cast<int>(mEntityIds.size() - 1);
 
 	for(auto && storage : mStorage)
 	{
 		storage.second->CopyComponentFromOtherStorage(storage.second, pRowIndex);
 	}
-	return static_cast<int>(mEntityIds.size()) - 1;		// new row index*/
+	return newRowIndex;
 }
 
 void ArchetypeData::CreateStorage()
@@ -119,4 +120,22 @@ void ArchetypeData::CreateStorage()
 			mStorage[componentType] = mStorageFactoryPtr->Create(componentType);
 		}
 	}
+}
+
+uint32_t ArchetypeData::GetNrRows() const
+{
+	return static_cast<uint32_t>(mEntityIds.size());
+}
+
+bool ArchetypeData::ValidateRowCounts() const
+{
+	size_t total = 0;
+	unsigned int count = 0;
+
+	for(auto && storage : mStorage)
+	{
+		total += storage.second->GetSize();
+		++count;
+	}
+	return static_cast<unsigned int>(total) / count == static_cast<unsigned int>(mEntityIds.size());
 }

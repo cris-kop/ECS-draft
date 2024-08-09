@@ -9,6 +9,8 @@
 
 #include <vector>
 #include <unordered_map>
+#include <cassert>
+
 
 struct EntityAdmin
 {
@@ -66,6 +68,12 @@ struct EntityAdmin
 		}
 	
 		UpdateRowIndices(pEntityId, oldRowIndex, oldArchetypeIndex, newRowIndex, newArchetypeIndex);
+
+		if(oldArchetypeIndex != -1)
+		{
+			assert(mArchetypesData[oldArchetypeIndex].ValidateRowCounts());
+		}
+		assert(mArchetypesData[newArchetypeIndex].ValidateRowCounts());
 		return true;
 	}
 
@@ -160,60 +168,7 @@ private:
 		return static_cast<int>(actualStorage->actualVector.size()) - 1;
 	}
 	
-	int CopyComponentsBetweenArchetypes(const unsigned int pEntityId, const unsigned int pSourceArchetype, const unsigned int pTargetArchetype)
-	{
-		std::unordered_map<unsigned int, Entity>::const_iterator entityIt = mEntities.find(pEntityId);
-		if(entityIt == mEntities.end())
-		{
-			return -1;
-		}
-		
-		unsigned int sourceRowIndex = entityIt->second.GetRowIndex();
-		if(sourceRowIndex == -1)
-		{
-			return -1;
-		}
-
-		unsigned int destRowIndex = 0;
-
-		ComponentSet sourceSet = mArchetypesData[pSourceArchetype].mComponentSet;
-		ComponentSet targetSet = mArchetypesData[pTargetArchetype].mComponentSet;
-
-		for(size_t i=0;i<64;++i)
-		{		
-			if((static_cast<uint64_t>(sourceSet) >> i) & 1)
-			{
-				ComponentSet componentType = static_cast<ComponentSet>(static_cast<uint64_t>(1) << i);
-
-				if(SetHasComponent(targetSet, componentType))
-				{
-					// copy component
-					auto srcIt = mArchetypesData[pSourceArchetype].mStorage.find(componentType);
-					if(srcIt == mArchetypesData[pSourceArchetype].mStorage.end())
-					{
-						return -1;
-					}
-					ComponentStorage *sourceStorage = srcIt->second; 
-
-					auto destIt = mArchetypesData[pTargetArchetype].mStorage.find(componentType);
-					if(destIt == mArchetypesData[pTargetArchetype].mStorage.end())
-					{
-						return -1;
-					}
-					ComponentStorage *destStorage = destIt->second; 
-
-					if(destStorage == nullptr)
-					{
-						return -1;	// forgot to register component type?
-					}
-
-					destRowIndex = destStorage->CopyComponentFromOtherStorage(sourceStorage, sourceRowIndex);
-				}
-			}
-		}
-		return destRowIndex;
-	}
-
+	int CopyComponentsBetweenArchetypes(const unsigned int pEntityId, const unsigned int pSourceArchetype, const unsigned int pTargetArchetype);
 	void UpdateRowIndices(const unsigned int pEntityId, const int pOldRowIndex, const int pOldArchetypeIndex, const unsigned int pNewRowIndex, const unsigned int pNewArchetypeIndex);
 	
 	ArchetypeStorageFactory mArchetypeStorageFactory;

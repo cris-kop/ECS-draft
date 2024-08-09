@@ -8,6 +8,13 @@ template<ComponentSet T>
 struct BaseComponent
 {
 	static constexpr ComponentSet sType = T;
+
+	void ChangeEntityId(const unsigned int pId)
+	{
+		mEntityId = pId;
+	}
+
+	unsigned int mEntityId;	// unused, just to sync with real implementation in engine
 };
 
 struct TransformComponent : public BaseComponent<ComponentSet::Transform>

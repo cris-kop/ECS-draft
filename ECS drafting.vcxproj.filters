@@ -71,5 +71,8 @@
     <ClInclude Include="SpansRange.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="ComponentStorage.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

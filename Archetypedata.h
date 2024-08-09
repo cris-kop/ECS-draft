@@ -4,6 +4,7 @@
 #include "Components.h"
 #include "ComponentSet.h"
 #include "SpansRange.h"
+#include "ComponentStorage.h"
 
 #include <vector>
 #include <map>
@@ -12,52 +13,6 @@
 
 struct ArchetypeStorageFactory;
 
-
-struct ComponentStorage
-{
-	virtual ~ComponentStorage() { };
-
-	virtual unsigned int CopyComponentFromOtherStorage(ComponentStorage *pSourceStorage, unsigned int pSourceIndex) = 0;
-	virtual void CopyAllComponentsFromOtherStorage(ComponentStorage *pSourceStorage) = 0;
-
-	virtual void DeleteComponent(const unsigned int pIndex) = 0;
-};
-
-template<typename T>
-struct ActualStorage : ComponentStorage
-{
-	unsigned int CopyComponentFromOtherStorage(ComponentStorage *pSourceStorage, unsigned int pSourceIndex)
-	{
-		ActualStorage<T> *sourceStorage = static_cast<ActualStorage<T>*>(pSourceStorage);		
-
-		if(pSourceIndex >= sourceStorage->actualVector.size())
-		{
-			return -1;
-		}
-
-		actualVector.emplace_back(sourceStorage->actualVector[pSourceIndex]);
-		return static_cast<unsigned int>(actualVector.size()) - 1;
-	}
-
-	void CopyAllComponentsFromOtherStorage(ComponentStorage *pSourceStorage)
-	{
-		ActualStorage<T> *sourceStorage = static_cast<ActualStorage<T>*>(pSourceStorage);
-		actualVector.reserve(sourceStorage->actualVector.size());
-
-		actualVector.insert(actualVector.end(), sourceStorage->actualVector.begin(), sourceStorage->actualVector.end());
-	}
-
-	void DeleteComponent(const unsigned int pIndex)
-	{
-		if(pIndex < actualVector.size() - 1)
-		{
-			actualVector[pIndex] = actualVector.back();
-		}
-		actualVector.pop_back();
-	}
-
-	std::vector<T>	actualVector;
-};
 
 struct ArchetypeData
 {
@@ -70,6 +25,9 @@ public:
 
 	ArchetypeData& operator=(const ArchetypeData& other) = delete;		// copy assignment: not allowed
 	ArchetypeData& operator=(ArchetypeData&& other) = delete;			// move assignment: not allowed
+
+	uint32_t GetNrRows()		const;
+	bool ValidateRowCounts()	const;
 
 	template <class T>
 	std::span<T> Get()
